@@ -1,0 +1,10 @@
+{
+  "name": "leo",
+  "displayName": "Leo",
+  "version": "0.1.0",
+  "description": "Вторая голова для главной сессии Claude: возвращает главное после сжатия, сомневается (Haiku-скептик) перед итогом для владельца и сразу запоминает его правила.",
+  "author": { "name": "zhichkin44-del" },
+  "repository": "https://github.com/zhichkin44-del/leo-claude-plugin",
+  "license": "MIT",
+  "keywords": ["memory", "compaction", "hooks", "haiku", "director"]
+}
