@@ -1,12 +1,16 @@
 {
   "name": "leo",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "license": "MIT",
   "type": "module",
   "description": "Leo - Claude Code plugin: restores context after compaction and fact-checks final answers (Haiku skeptic)",
   "scripts": {
-    "test": "node --test \"tests/*.test.mjs\""
+    "test": "node --test \"tests/*.test.mjs\"",
+    "coverage": "node --test --experimental-test-coverage \"tests/*.test.mjs\"",
+    "check": "node scripts/check-syntax.mjs"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }

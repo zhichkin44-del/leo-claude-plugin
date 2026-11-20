@@ -1,7 +1,7 @@
 {
   "name": "leo",
   "displayName": "Leo",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "description": "Keeps Claude Code on track: restores your sessions, promises and rules after context compaction, and has a Haiku skeptic fact-check the final answer before you see it.",
   "author": { "name": "zhichkin44-del" },
   "homepage": "https://github.com/zhichkin44-del/leo-claude-plugin",

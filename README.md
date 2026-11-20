@@ -19,7 +19,9 @@ Start a new session, then run `/leo:doctor`. It checks Node, `claude` in PATH, t
 
 ## What it does
 
-After the context is compacted, Claude forgets what was going on. Leo puts the important part back (at most 40 lines): open sessions and their status, what waits for your decision, rules you gave, things the assistant promised and did not finish.
+After the context is compacted, Claude forgets what was going on. Leo puts the important part back (at most 40 lines): your open tasks, your last request, standing instructions you gave ("always...", "never..."), files touched recently, and, if you keep them, sessions and their status, what waits for your decision, rules and promises.
+
+**It works out of the box.** Before compaction (PreCompact) and again at session start Leo reads the session transcript and collects this itself: no setup, no manual notes, no model call. State is kept per `session_id`, so two windows never see each other's tasks.
 
 Before a final answer reaches you, Leo asks Claude Haiku (one call, no tools, one turn) to read it in two roles:
 
@@ -29,8 +31,10 @@ Before a final answer reaches you, Leo asks Claude Haiku (one call, no tools, on
 A serious finding sends the answer back for one fix round (`mode: block`) or only whispers a hint (`mode: advice`). Everything else stays silent.
 
 ```
+PreCompact --> hooks/precompact.mjs --> lib/collect.mjs --> state.json (per session_id)
+PostCompact --> hooks/postcompact.mjs --> log entry
 SessionStart (compact|resume) --> hooks/session-start.mjs --> lib/restore.mjs --> <= 40 lines into context
-                                  sources: state.json, optional STATUS.md / HANDOFF-*.md / memory index
+                                  sources: session transcript, state.json, optional STATUS.md / HANDOFF-*.md / memory index
 
 Stop (final answer) --> hooks/stop.mjs --> lib/skeptic.mjs --> claude -p (Haiku, no tools, 1 turn, timeout)
                             |                                       |
@@ -51,7 +55,7 @@ Fix the answer accordingly. If a finding is wrong, say why in one sentence and a
 
 ## Why Leo
 
-- **Light and transparent.** No database, no background process, no hook on every message, zero dependencies. Two hook events, a few files you can read in ten minutes.
+- **Light and transparent.** No database, no background process, no hook on every message, zero dependencies. Four hook events (none per message), a few files you can read in ten minutes.
 - **It checks the answer, not only the memory.** Most compaction plugins save and restore state. Leo also fact-checks the final answer, with a loop guard (one Haiku call and one block round per answer, and the inner call cannot trigger Leo again).
 - **Honest about secrets.** A filter masks values (not paths) before anything is written, restored or sent to Haiku. It is a safety net, not a guarantee.
 
@@ -60,7 +64,7 @@ Fix the answer accordingly. If a finding is wrong, say why in one sentence and a
 | Dependencies | none | Node, SQLite, Chroma | Python stdlib | see its README |
 | Database | none (one JSON file) | SQLite + Chroma | files | see its README |
 | Checks the final answer | yes (Haiku skeptic) | no | no | no |
-| Saves before compaction (PreCompact) | no, see Limitations | yes | yes | yes |
+| Saves before compaction (PreCompact) | yes | yes | yes | yes |
 
 Not for you if you want memory across projects and search over history: use claude-mem. Leo is about one long session staying honest and not losing the thread. The table reflects the projects' public descriptions on 2026-11-20; check their READMEs before relying on it.
 
@@ -92,6 +96,7 @@ Create `~/.claude/leo/config.json`. Every key is optional; the schema is in [`do
 | `maxCostPerDay` | `0` | dollars per day, `0` means no limit |
 | `roles` | both `true` | switch `reader` or `skeptic` off |
 | `ruleTtlDays` | `1` | how long a rule added with `rule add` stays active |
+| `autoCollect` | `true` | collect tasks, last request, instructions and files from the transcript |
 | `log` | `true` | write `leo.log` |
 | `sources` | `{}` | optional `status`, `handoffDir`, `memoryIndex` files that Leo also reads |
 | `profile` | `default` | `director`: the author's personal Russian vocabulary |
@@ -121,15 +126,16 @@ Run `/leo:doctor` first; each `[FIX ]` line says what to do.
 - **"claude was not found in PATH"**: hooks sometimes run with a shorter PATH than your terminal (IDEs, desktop app). Put the folder with `claude` into PATH, or set `LEO_CLAUDE` to its full path. Without it the answer check silently does nothing.
 - **"no --safe-mode flag"**: update Claude Code (`claude update`).
 - **"Cannot write to ..."**: fix the permissions of `~/.claude/leo` or set `LEO_HOME` to a writable folder.
-- **Nothing is restored after compaction**: Leo restores what it has; right now that is what the session recorded with the commands above and your optional source files. See Limitations.
+- **Little is restored after compaction**: Leo restores what the transcript shows (open `TodoWrite` tasks, your last request, "always/never" instructions, edited files) plus anything you recorded with the commands above. If a session had no todo list and no such instructions, there is little to restore. Check with `/leo:show`; `"autoCollect": false` turns the collection off.
 - **Too slow**: the check adds about 8 to 11 seconds to a long final answer (measured on Windows with the direct `claude.exe`; about 22 s through `claude.cmd`). Use `"mode": "advice"`, raise `minLength`, or `"roles": {"reader": false}`.
 
 ## Limitations
 
 - Needs the `claude` CLI signed in and online for the answer check.
 - The check is probabilistic: Haiku can miss a finding or nitpick. A serious finding gives one block round, then the answer goes through.
-- The state restored after compaction is only as good as what was recorded; Leo does not yet build it by itself from the transcript, and it has no PreCompact hook yet.
-- Tests were developed on Windows; macOS and Linux are covered by the CI workflow in this repository.
+- Automatic collection is heuristic: it sees open `TodoWrite` tasks, the last substantial user message, sentences with words like always/never/всегда/никогда, and the last edited files. It does not understand the conversation; use `rule add`, `wait add`, `promise add` for what matters most.
+- The `PostCompact` hook only writes a journal entry; the restore itself comes from `SessionStart` with the `compact` matcher.
+- Tests were developed on Windows; macOS and Linux are covered by the CI workflow in `.github/workflows/ci.yml` (3 systems x Node 18/20/22), which runs after the first push.
 - The secret filter is a safety net: it knows common token formats and `KEY=value` lines, not every secret in the world.
 
 ## Contributing

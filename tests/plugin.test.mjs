@@ -23,9 +23,9 @@ test('marketplace.json: name, owner, plugins[leo] с относительным 
   assert.ok(e.source === './' || e.source === '.' || e.source.startsWith('./'));
 });
 
-test('hooks.json: два события (нет хука на каждое сообщение), exec-форма node + CLAUDE_PLUGIN_ROOT, нужные matcher и таймауты', () => {
+test('hooks.json: события SessionStart/PreCompact/PostCompact/Stop (нет хука на каждое сообщение), exec-форма node + CLAUDE_PLUGIN_ROOT, нужные matcher и таймауты', () => {
   const h = j('hooks/hooks.json').hooks;
-  assert.deepEqual(Object.keys(h).sort(), ['SessionStart', 'Stop']);
+  assert.deepEqual(Object.keys(h).sort(), ['PostCompact', 'PreCompact', 'SessionStart', 'Stop']);
   assert.equal(h.SessionStart[0].matcher, 'compact|resume');
   for (const [ev, file] of [['SessionStart', 'session-start.mjs'], ['Stop', 'stop.mjs']]) {
     const hk = h[ev][0].hooks[0];

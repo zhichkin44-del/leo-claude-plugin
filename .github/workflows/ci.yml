@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main, next]
+  pull_request:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['18', '20', '22']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Syntax check (node --check)
+        run: npm run check
+      - name: Tests
+        run: npm test
+      - name: Zero dependencies
+        run: node -e "const p=require('./package.json');const n=Object.keys({...p.dependencies,...p.devDependencies}).length;if(n){console.error(n+' dependencies');process.exit(1)}"
+
+  coverage:
+    name: coverage (lib >= 85%)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Tests with coverage
+        run: npm run coverage | tee coverage.txt
+      - name: Check threshold
+        run: node scripts/check-coverage.mjs coverage.txt 85
+
+  validate:
+    name: claude plugin validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Validate plugin and marketplace
+        run: claude plugin validate --strict .
+
+  secrets:
+    name: secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Built-in history scan
+        run: node scripts/scan-history.mjs

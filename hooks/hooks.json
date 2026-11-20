@@ -7,7 +7,9 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs"],
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs"
+            ],
             "timeout": 10
           }
         ]
@@ -19,8 +21,38 @@
           {
             "type": "command",
             "command": "node",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/stop.mjs"],
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/stop.mjs"
+            ],
             "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/precompact.mjs"
+            ],
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/hooks/postcompact.mjs"
+            ],
+            "timeout": 10
           }
         ]
       }

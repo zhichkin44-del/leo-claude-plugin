@@ -2,6 +2,19 @@
 
 All notable changes to Leo. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/).
 
+## [0.5.0] - 2026-11-20
+
+### Added
+- Works out of the box: the `PreCompact` hook and `SessionStart` read the session transcript and collect open `TodoWrite` tasks, the last user request, standing instructions (always / never / всегда / никогда) and recently edited files, with no setup and no model call. Switch off with `"autoCollect": false`.
+- Per-session state: collected data is stored under `session_id` (10 newest sessions kept); `resume` under a new id falls back to the latest session of the same folder.
+- `PostCompact` hook (journal entry only; the restore itself stays on `SessionStart` with matcher `compact`).
+- GitHub Actions workflow `.github/workflows/ci.yml`: ubuntu / macOS / Windows x Node 18, 20, 22 (syntax check, tests, zero-dependency check), coverage threshold, `claude plugin validate --strict`, gitleaks + built-in history scan.
+- `npm run coverage`, `npm run check`, `scripts/check-coverage.mjs` (lib/ line coverage >= 85%).
+
+### Changed
+- `leo doctor` now also requires the PreCompact and PostCompact hooks.
+- README: automatic collection, updated comparison and limitations.
+
 ## [0.3.0] - 2026-11-20
 
 ### Added
