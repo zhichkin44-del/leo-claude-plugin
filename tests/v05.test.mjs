@@ -254,7 +254,8 @@ test('покрытие: скрипт проверки порога 85% по lib/
 test('package.json: скрипты test и coverage', () => {
   const p = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
   assert.ok(p.scripts.test);
-  assert.match(p.scripts.coverage, /experimental-test-coverage/);
+  assert.match(p.scripts.coverage, /--coverage/);
+  assert.match(readFileSync(join(ROOT, 'scripts', 'run-tests.mjs'), 'utf8'), /experimental-test-coverage/);
   assert.match(p.scripts.check, /node --check|check-syntax/);
 });
 

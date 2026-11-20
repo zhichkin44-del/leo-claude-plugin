@@ -6,8 +6,8 @@
   "type": "module",
   "description": "Leo - Claude Code plugin: restores context after compaction and fact-checks final answers (Haiku skeptic)",
   "scripts": {
-    "test": "node --test \"tests/*.test.mjs\"",
-    "coverage": "node --test --experimental-test-coverage \"tests/*.test.mjs\"",
+    "test": "node scripts/run-tests.mjs",
+    "coverage": "node scripts/run-tests.mjs --coverage",
     "check": "node scripts/check-syntax.mjs"
   },
   "engines": {

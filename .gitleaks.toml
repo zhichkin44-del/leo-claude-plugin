@@ -1,0 +1,8 @@
+title = "Leo gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake test fixtures: tests/secrets.test.mjs (commit 5b02fa1) uses a made-up API_KEY value to check masking"
+regexes = ['''abcd1234efgh5678''']
