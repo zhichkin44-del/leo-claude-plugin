@@ -2,6 +2,14 @@
 
 All notable changes to Leo. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/).
 
+## [0.5.1] - 2026-11-20
+
+### Fixed
+- The final-answer check failed with `spawn claude ENOENT` when hooks ran with a shorter PATH than the terminal (for example `claude.exe` in `%USERPROFILE%\.local\bin`).
+- `claude` is now looked up in order: `LEO_CLAUDE`, then `"claudePath"` in config.json (new key), then PATH, then the usual install folders (Windows: `%USERPROFILE%\.local\bin\claude.exe`, `%APPDATA%\npm\claude.cmd`, `%LOCALAPPDATA%\Programs\claude\claude.exe`; macOS/Linux: `~/.local/bin/claude`, `/usr/local/bin/claude`, `/opt/homebrew/bin/claude`, `~/.npm-global/bin/claude`).
+- When claude is not found, leo.log gets one `claude-missing` line per session instead of one `haiku-failed` line per answer; `leo doctor` shows which source was used and explains how to set `claudePath`.
+- Tests: `npm test` now lists the test files itself (`scripts/run-tests.mjs`), so Node 18 and 20 no longer fail on the `tests/*.test.mjs` glob. Gitleaks: the fake key in `tests/secrets.test.mjs` is allowed by `.gitleaks.toml` and `.gitleaksignore`.
+
 ## [0.5.0] - 2026-11-20
 
 ### Added

@@ -74,5 +74,5 @@ test('путь к claude с пробелами и несуществующий s
   const r = runHook('stop.mjs', { stop_hook_active: false, last_assistant_message: 'Готово: слил PR 12 в main и проверил на стенде, тесты зелёные. '.repeat(3) }, { ...sb.env, LEO_CLAUDE: 'C:/Program Files/нет такого/claude.exe' });
   assert.equal(r.code, 0);
   assert.equal(r.stdout.trim(), '');
-  assert.match(sb.log(), /haiku-failed/);
+  assert.match(sb.log(), /claude-missing/);
 });

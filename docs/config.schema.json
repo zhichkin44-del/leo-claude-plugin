@@ -10,6 +10,7 @@
     "mode": { "enum": ["block", "advice"], "default": "advice", "description": "block: a serious finding sends the answer back for a fix (one round). advice: only a hint, never blocks." },
     "minLength": { "type": "number", "minimum": 0, "default": 600, "description": "Answers at least this long (characters) are checked even without claim words. Answers under 120 characters are never checked." },
     "model": { "type": "string", "pattern": "^[\\w.:-]+$", "default": "haiku", "description": "Model for the check, passed to `claude --model`." },
+    "claudePath": { "type": "string", "default": "", "description": "Full path to the claude executable, used when hooks run with a shorter PATH. Empty: LEO_CLAUDE, then PATH, then the usual install folders." },
     "maxCostPerDay": { "type": "number", "minimum": 0, "default": 0, "description": "Daily limit in dollars for checks; 0 means no limit." },
     "roles": {
       "type": "object",
