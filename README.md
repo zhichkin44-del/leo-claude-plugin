@@ -1,79 +1,141 @@
-# Leo — плагин Claude Code: память после сжатия и проверка итоговых ответов
+# Leo
 
-Leo подключается к главной сессии Claude Code двумя хуками и решает две задачи: после сжатия контекста возвращает в сессию главное (рабочие окна, что ждёт решения, правила дня, невыполненные обещания), а перед итоговым ответом владельцу просит Claude Haiku проверить его в двух ролях — «владелец» и «скептик». Без внешних зависимостей, без фоновых процессов, хука на каждое сообщение нет.
+**Leo keeps Claude Code on track: it restores your sessions, promises and rules after context compaction, and has a Haiku skeptic fact-check the final answer before you see it.**
 
-*EN: Leo is a Claude Code plugin with two hooks. After context compaction it restores the working state (open sessions, pending decisions, today's rules, unfulfilled promises). Before a final answer reaches the user it runs one tool-free, single-turn Claude Haiku call that plays a "reader" and a "skeptic" and blocks the answer on a serious finding. Node.js only, no dependencies, 57 tests.*
+[Русский](README.ru.md) · MIT · Node.js 18+ · Windows, macOS, Linux · zero dependencies
 
-## Схема
+## Install
 
-```
-SessionStart (compact|resume) ──► hooks/session-start.mjs ──► lib/restore.mjs ──► ≤ 40 строк в контекст
-                                      источники: STATUS.md, HANDOFF-*.md, индекс памяти, state.json
-
-Stop (итоговый ответ) ──► hooks/stop.mjs ──► lib/skeptic.mjs ──► claude -p (Haiku, без инструментов, 1 ход, таймаут)
-                              │                                        │
-                              │   фильтр секретов (lib/secrets.mjs) ◄──┘ вердикт JSON
-                              ▼
-                  серьёзная находка → decision: block + причина
-                  подсказка о новом правиле → additionalContext
-                  иначе → тишина
-```
-
-| Хук | Что происходит |
-|---|---|
-| `SessionStart`, matcher `compact\|resume` | Возвращает в контекст не больше 40 строк. Источники настраиваются (см. ниже), нет файла — источник молча пропускается. |
-| `Stop` | Если ответ — итог (от 600 знаков или от 120 со словами «сделано / слито / готово…»), один вызов Haiku: роль «владелец» (понятно ли, коротко ли, нет ли жаргона), роль «скептик» (нет ли непроверенных утверждений и пропущенных обещаний) и вопрос, не дал ли владелец нового устойчивого указания. Слов-триггеров в коде нет — решает модель, при сомнении молчит. |
-
-Вызов Haiku изолирован: `claude -p --safe-mode --model haiku --output-format json --no-session-persistence --disallowedTools "*" --max-turns 1`, запрос идёт через stdin, таймаут 45 с. `--safe-mode` отключает хуки и плагины в этом вызове, поэтому Leo не запускает сам себя. Всё, что пишется в файлы или уходит в Haiku, проходит фильтр секретов. Любая ошибка хука — запись в журнал и тихий выход с кодом 0; не больше одного вызова Haiku на ответ и одного круга блокировки.
-
-## Запуск одной командой
-
-Нужны Node.js 18+ и `claude` в PATH.
+Needs Claude Code and Node.js 18+.
 
 ```bash
-claude plugin marketplace add zhichkin44-del/leo-claude-plugin && claude plugin install leo@leo-marketplace
+claude plugin marketplace add zhichkin44-del/leo-claude-plugin
+claude plugin install leo@leo-marketplace
 ```
 
-Хуки подхватываются при новом запуске сессии. Проверка: `claude plugin list`, затем `node "<папка плагина>/bin/leo.mjs" show` — покажет, что Leo вернул бы после сжатия.
+On Claude Code 2.1.292+ one line is enough: `claude plugin install leo --marketplace zhichkin44-del/leo-claude-plugin`.
 
-Выключить, не удаляя: `node "<папка плагина>/bin/leo.mjs" off` (обратно — `on`). Полностью: `claude plugin uninstall leo@leo-marketplace`.
+Start a new session, then run `/leo:doctor`. It checks Node, `claude` in PATH, the hooks, file rights and your config, and tells you what to fix.
 
-## Настройка
+## What it does
 
-Состояние лежит в `~/.claude/leo/` (папка меняется через `LEO_HOME`): `state.json`, журнал `leo.log` (вердикт, число находок, время, цена каждого вызова), файл-выключатель `off`.
+After the context is compacted, Claude forgets what was going on. Leo puts the important part back (at most 40 lines): open sessions and their status, what waits for your decision, rules you gave, things the assistant promised and did not finish.
 
-Источники для возврата после сжатия задаются в `~/.claude/leo/config.json`:
+Before a final answer reaches you, Leo asks Claude Haiku (one call, no tools, one turn) to read it in two roles:
 
-```json
-{ "sources": { "status": "/путь/STATUS.md", "handoffDir": "/путь/к/папке", "memoryIndex": "/путь/MEMORY.md" } }
+- **reader**: is it in plain words, short, free of unexplained jargon, clear what you must do?
+- **skeptic**: does it claim "done / merged / works" without proof? Was something promised and dropped? Are your rules broken?
+
+A serious finding sends the answer back for one fix round (`mode: block`) or only whispers a hint (`mode: advice`). Everything else stays silent.
+
+```
+SessionStart (compact|resume) --> hooks/session-start.mjs --> lib/restore.mjs --> <= 40 lines into context
+                                  sources: state.json, optional STATUS.md / HANDOFF-*.md / memory index
+
+Stop (final answer) --> hooks/stop.mjs --> lib/skeptic.mjs --> claude -p (Haiku, no tools, 1 turn, timeout)
+                            |                                       |
+                            |  secret filter (lib/secrets.mjs) <----+  verdict JSON
+                            v
+            serious finding -> decision: block + reason (or a hint in advice mode)
+            suspected new standing rule -> additionalContext hint (Leo never writes memory itself)
+            otherwise -> silence
 ```
 
-или переменными `LEO_STATUS`, `LEO_HANDOFF_DIR`, `LEO_MEMORY_INDEX`. Прочее: `LEO_OFF=1` (хуки молчат), `LEO_HAIKU_TIMEOUT_MS` (по умолчанию 45000), `LEO_CLAUDE` (путь к `claude`).
+Example of a block (the assistant sees this and fixes its answer):
 
-Записи ведёт сама сессия через CLI:
-
-```bash
-node "<папка плагина>/bin/leo.mjs" window set <имя> <статус> "<заметка>"
-node "<папка плагина>/bin/leo.mjs" wait add "<что ждёт решения>"
-node "<папка плагина>/bin/leo.mjs" promise add "<обещано>"   # и: promise done <id>
-node "<папка плагина>/bin/leo.mjs" rule add "<правило дня>"   # и: rule drop <id>
+```
+Leo's check (Haiku in the roles "reader" and "skeptic") found serious problems in the answer:
+1. [skeptic] Says "merged" but gives no commit id or test output.
+Fix the answer accordingly. If a finding is wrong, say why in one sentence and answer the user.
 ```
 
-## Тесты
+## Why Leo
 
-```bash
-npm test
+- **Light and transparent.** No database, no background process, no hook on every message, zero dependencies. Two hook events, a few files you can read in ten minutes.
+- **It checks the answer, not only the memory.** Most compaction plugins save and restore state. Leo also fact-checks the final answer, with a loop guard (one Haiku call and one block round per answer, and the inner call cannot trigger Leo again).
+- **Honest about secrets.** A filter masks values (not paths) before anything is written, restored or sent to Haiku. It is a safety net, not a guarantee.
+
+| | Leo | claude-mem | context-recovery | token-optimizer |
+|---|---|---|---|---|
+| Dependencies | none | Node, SQLite, Chroma | Python stdlib | see its README |
+| Database | none (one JSON file) | SQLite + Chroma | files | see its README |
+| Checks the final answer | yes (Haiku skeptic) | no | no | no |
+| Saves before compaction (PreCompact) | no, see Limitations | yes | yes | yes |
+
+Not for you if you want memory across projects and search over history: use claude-mem. Leo is about one long session staying honest and not losing the thread. The table reflects the projects' public descriptions on 2026-11-20; check their READMEs before relying on it.
+
+## What leaves your machine
+
+Leo has no server, no telemetry and makes no network calls of its own. The only thing that leaves your machine is the Haiku call, made through **your own installed `claude`, under your own account**:
+
+- the final answer of the assistant, up to **8000 characters** (the middle is cut if longer);
+- your **3 latest messages** from the session transcript;
+- your rules for today and the open promises Leo stored.
+
+Everything passes the secret filter first. Answers shorter than 120 characters are never sent; answers from 120 to 599 characters are sent only if they contain claim words such as "done", "fixed", "merged". Nothing is sent when Leo is off.
+
+What Leo stores locally, in `~/.claude/leo/` (or `$LEO_HOME`): `state.json` (sessions, pending items, promises, rules; texts up to 300 characters, filtered), `leo.log` (verdict, number of findings, time, cost; never the text of answers), `config.json` (yours), and an `off` switch file. Files are created with mode 0600 on macOS and Linux; on Windows they inherit your profile's permissions. Turn the journal off with `"log": false` or `LEO_NO_LOG=1`.
+
+`leo doctor` prints the same summary. Turn Leo off with `/leo:off`.
+
+## Configuration
+
+Create `~/.claude/leo/config.json`. Every key is optional; the schema is in [`docs/config.schema.json`](docs/config.schema.json) and `leo doctor` validates it.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `lang` | system locale, else `en` | `en` or `ru`: language of Leo's messages and of the Haiku prompt (`LEO_LANG` overrides) |
+| `mode` | `block` | `block` sends a serious finding back for a fix; `advice` only hints (`LEO_MODE`) |
+| `minLength` | `600` | answers this long are checked even without claim words (`LEO_MIN_LENGTH`) |
+| `triggers` | `[]` | extra claim words |
+| `model` | `haiku` | model for the check (`LEO_MODEL`) |
+| `maxCostPerDay` | `0` | dollars per day, `0` means no limit |
+| `roles` | both `true` | switch `reader` or `skeptic` off |
+| `ruleTtlDays` | `1` | how long a rule added with `rule add` stays active |
+| `log` | `true` | write `leo.log` |
+| `sources` | `{}` | optional `status`, `handoffDir`, `memoryIndex` files that Leo also reads |
+| `profile` | `default` | `director`: the author's personal Russian vocabulary |
+
+Environment: `LEO_HOME`, `LEO_OFF=1` (hooks stay silent), `LEO_NO_LOG=1`, `LEO_HAIKU_TIMEOUT_MS` (default 45000), `LEO_CLAUDE` (full path to `claude`).
+
+## Commands
+
+Inside Claude Code: `/leo:show` (what Leo would restore now), `/leo:status`, `/leo:doctor`, `/leo:off`, `/leo:on`.
+
+From a terminal: `node "<plugin folder>/bin/leo.mjs" <command>`:
+
+```
+show | status | log [n] | doctor [--ping] | off | on
+window set <name> <status> [note] | window drop <name>
+wait add <text> | wait done <id>
+promise add <text> | promise done <id>
+rule add <text> | rule drop <id>
 ```
 
-Результат запуска 18.11.2026 (Node.js, `node --test`): **57 тестов, 56 прошли, 0 упали, 1 пропущен** — пропущена проверка `claude plugin validate`, она выполняется только при установленном `claude`. Вместо настоящего `claude` тесты используют подставной `tests/fake-claude.mjs`. Покрыто: петля `stop_hook_active`, таймаут, кривой вход (пусто, `null`, массив, неверные типы), битый `state.json`, фильтр секретов, лимит 40 строк, служебные сообщения в транскрипте, отсутствие слов-триггеров в коде.
+`log` prints the last verdicts, how many blocks, the total cost and the average time. `doctor --ping` makes one real, tiny Haiku call and reports time and cost.
 
-## Ограничения
+## Troubleshooting
 
-- Haiku вызывается через установленный `claude`, поэтому нужны его вход в аккаунт и доступ к сети; задержка проверки 8–11 с на итоговый ответ (замер на Windows, прямой запуск `claude.exe`; через `claude.cmd` около 22 с).
-- Проверка вероятностная: модель может пропустить находку или придраться зря. Одна серьёзная находка даёт один круг блокировки, дальше ответ уходит.
-- Источники для возврата после сжатия по умолчанию не заданы — без настройки работают только записи Leo (`state.json`).
-- Тесты прогнаны на Windows; на других системах не запускались.
+Run `/leo:doctor` first; each `[FIX ]` line says what to do.
 
-## Лицензия
+- **"claude was not found in PATH"**: hooks sometimes run with a shorter PATH than your terminal (IDEs, desktop app). Put the folder with `claude` into PATH, or set `LEO_CLAUDE` to its full path. Without it the answer check silently does nothing.
+- **"no --safe-mode flag"**: update Claude Code (`claude update`).
+- **"Cannot write to ..."**: fix the permissions of `~/.claude/leo` or set `LEO_HOME` to a writable folder.
+- **Nothing is restored after compaction**: Leo restores what it has; right now that is what the session recorded with the commands above and your optional source files. See Limitations.
+- **Too slow**: the check adds about 8 to 11 seconds to a long final answer (measured on Windows with the direct `claude.exe`; about 22 s through `claude.cmd`). Use `"mode": "advice"`, raise `minLength`, or `"roles": {"reader": false}`.
+
+## Limitations
+
+- Needs the `claude` CLI signed in and online for the answer check.
+- The check is probabilistic: Haiku can miss a finding or nitpick. A serious finding gives one block round, then the answer goes through.
+- The state restored after compaction is only as good as what was recorded; Leo does not yet build it by itself from the transcript, and it has no PreCompact hook yet.
+- Tests were developed on Windows; macOS and Linux are covered by the CI workflow in this repository.
+- The secret filter is a safety net: it knows common token formats and `KEY=value` lines, not every secret in the world.
+
+## Contributing
+
+`npm test` runs everything with a fake `claude` (`tests/fake-claude.mjs`), no network. To add a secret rule, add it to `lib/secrets.mjs` and a positive and a negative sample to `tests/secrets.test.mjs`. Messages live in `lib/i18n.mjs`; a test checks that English and Russian have the same keys.
+
+## License
 
 MIT

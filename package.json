@@ -1,10 +1,10 @@
 {
   "name": "leo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "license": "MIT",
   "type": "module",
-  "description": "Leo — плагин Claude Code: возврат контекста после сжатия и проверка итоговых ответов (Haiku-скептик)",
+  "description": "Leo - Claude Code plugin: restores context after compaction and fact-checks final answers (Haiku skeptic)",
   "scripts": {
     "test": "node --test \"tests/*.test.mjs\""
   },

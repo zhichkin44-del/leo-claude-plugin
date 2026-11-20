@@ -1,10 +1,11 @@
 {
   "name": "leo",
   "displayName": "Leo",
-  "version": "0.2.0",
-  "description": "Вторая голова для главной сессии Claude: возвращает главное после сжатия, сомневается (Haiku-скептик) перед итогом для владельца и сразу запоминает его правила.",
+  "version": "0.3.0",
+  "description": "Keeps Claude Code on track: restores your sessions, promises and rules after context compaction, and has a Haiku skeptic fact-check the final answer before you see it.",
   "author": { "name": "zhichkin44-del" },
+  "homepage": "https://github.com/zhichkin44-del/leo-claude-plugin",
   "repository": "https://github.com/zhichkin44-del/leo-claude-plugin",
   "license": "MIT",
-  "keywords": ["memory", "compaction", "hooks", "haiku", "director"]
+  "keywords": ["memory", "compaction", "hooks", "haiku", "verification"]
 }

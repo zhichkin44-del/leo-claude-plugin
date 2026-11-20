@@ -1,12 +1,12 @@
 {
   "name": "leo-marketplace",
-  "description": "Leo — плагин для главной сессии Claude Code",
+  "description": "Leo: keeps Claude Code on track after context compaction",
   "owner": { "name": "zhichkin44-del" },
   "plugins": [
     {
       "name": "leo",
       "source": "./",
-      "description": "Возврат главного после сжатия, Haiku-скептик перед итогом, правила владельца сразу в память."
+      "description": "Restores sessions, promises and rules after context compaction; a Haiku skeptic checks the final answer."
     }
   ]
 }

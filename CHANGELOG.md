@@ -2,6 +2,21 @@
 
 All notable changes to Leo. Format: [Keep a Changelog](https://keepachangelog.com/), versions: [SemVer](https://semver.org/).
 
+## [0.3.0] - 2026-11-20
+
+### Added
+- English is the default language of all messages and of the Haiku prompt; Russian via `LEO_LANG=ru` or `"lang": "ru"` (all keys exist in both languages, checked by a test). Language falls back to the system locale.
+- `leo doctor [--ping]`: Node >= 18, `claude` in PATH and its version, `--safe-mode` support, write access, `config.json`, hooks, sources, optional real test call with time and cost. Each problem says what to fix.
+- `leo status`, `leo log [n]` (verdicts, blocks, cost, average time).
+- Slash commands `/leo:show`, `/leo:status`, `/leo:doctor`, `/leo:off`, `/leo:on` (skills).
+- `config.json` settings with a JSON schema: `mode` (block or advice), `minLength`, `triggers`, `model`, `maxCostPerDay`, `roles`, `ruleTtlDays`, `log`, `lang`, `profile`.
+- README.md in English (main) and README.ru.md, including "What leaves your machine".
+
+### Changed
+- The Haiku prompt and block messages no longer contain the author's private vocabulary (director / owner / "not a programmer"); that vocabulary lives in the optional `profile: "director"` (Russian). Roles are now called reader and skeptic; the parser still accepts the old `owner` key.
+- Secret mask is `[hidden]`.
+- plugin.json and marketplace.json descriptions are in English; added `homepage`.
+
 ## [0.2.0] - 2026-11-20
 
 ### Fixed

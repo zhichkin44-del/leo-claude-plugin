@@ -20,6 +20,8 @@ export function sandbox() {
     LEO_FAKE_LOG: join(dir, 'fake.log'),
     LEO_NOW: '2026-11-14T10:00:00+07:00',
     CLAUDE_PLUGIN_ROOT: ROOT,
+    LEO_LANG: 'ru',
+    LEO_PROFILE: 'director',
   };
   return {
     dir, home, env,

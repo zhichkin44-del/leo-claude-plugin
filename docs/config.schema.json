@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Leo config.json",
+  "description": "Optional settings file: ~/.claude/leo/config.json (or $LEO_HOME/config.json). Every key is optional. `leo doctor` validates this file.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lang": { "enum": ["", "en", "ru"], "default": "", "description": "Language of Leo's messages and of the Haiku prompt. Empty: LEO_LANG, then the system locale, then en." },
+    "profile": { "enum": ["default", "director"], "default": "default", "description": "'director' is the author's personal vocabulary (Russian only)." },
+    "mode": { "enum": ["block", "advice"], "default": "block", "description": "block: a serious finding sends the answer back for a fix (one round). advice: only a hint, never blocks." },
+    "minLength": { "type": "number", "minimum": 0, "default": 600, "description": "Answers at least this long (characters) are checked even without claim words. Answers under 120 characters are never checked." },
+    "model": { "type": "string", "pattern": "^[\\w.:-]+$", "default": "haiku", "description": "Model for the check, passed to `claude --model`." },
+    "maxCostPerDay": { "type": "number", "minimum": 0, "default": 0, "description": "Daily limit in dollars for checks; 0 means no limit." },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reader": { "type": "boolean", "default": true, "description": "Plain words, short, clear what to do." },
+        "skeptic": { "type": "boolean", "default": true, "description": "Unverified claims, forgotten promises, broken rules." }
+      }
+    },
+    "ruleTtlDays": { "type": "number", "minimum": 0, "default": 1, "description": "How many days a rule recorded with `rule add` stays active." },
+    "triggers": { "type": "array", "items": { "type": "string" }, "default": [], "description": "Extra claim words that make a 120+ character answer worth checking." },
+    "log": { "type": "boolean", "default": true, "description": "false: do not write leo.log." },
+    "autoCollect": { "type": "boolean", "default": true, "description": "Collect session state from the transcript before compaction." },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": { "type": "string", "description": "Path to a STATUS.md-style file (optional)." },
+        "handoffDir": { "type": "string", "description": "Folder with HANDOFF-*.md files (optional)." },
+        "memoryIndex": { "type": "string", "description": "Path to a memory index markdown file (optional)." }
+      }
+    }
+  }
+}
