@@ -89,7 +89,7 @@ Create `~/.claude/leo/config.json`. Every key is optional; the schema is in [`do
 | Key | Default | Meaning |
 |---|---|---|
 | `lang` | system locale, else `en` | `en` or `ru`: language of Leo's messages and of the Haiku prompt (`LEO_LANG` overrides) |
-| `mode` | `block` | `block` sends a serious finding back for a fix; `advice` only hints (`LEO_MODE`) |
+| `mode` | `advice` | `advice` only hints; `block` sends a serious finding back for a fix (`LEO_MODE`) |
 | `minLength` | `600` | answers this long are checked even without claim words (`LEO_MIN_LENGTH`) |
 | `triggers` | `[]` | extra claim words |
 | `model` | `haiku` | model for the check (`LEO_MODEL`) |

@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { sandbox, runHook, longReply, ROOT, FK } from './helpers.mjs';
 
 const inp = (msg, extra = {}) => ({ session_id: 's', hook_event_name: 'Stop', stop_hook_active: false, last_assistant_message: msg, cwd: '.', ...extra });
-const env = (sb, mode, more = {}) => ({ ...sb.env, LEO_FAKE_MODE: mode, ...more });
+// LEO_MODE=block: эти тесты проверяют блокировку; по умолчанию режим advice.
+const env = (sb, mode, more = {}) => ({ ...sb.env, LEO_FAKE_MODE: mode, LEO_MODE: 'block', ...more });
 
 test('не итог (короткий ответ) — Haiku не зовём', () => {
   const sb = sandbox();

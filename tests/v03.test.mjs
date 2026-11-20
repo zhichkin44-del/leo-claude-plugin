@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { ROOT, sandbox, runHook, runCli, longReply } from './helpers.mjs';
 import { CATALOG, t, pickLang } from '../lib/i18n.mjs';
 import { buildPrompt, parseVerdict, blockReason } from '../lib/skeptic.mjs';
-import { validateConfig, loadConfig } from '../lib/config.mjs';
+import { validateConfig, loadConfig, DEFAULTS } from '../lib/config.mjs';
 import { emptyState } from '../lib/state.mjs';
 
 const EN = { LEO_LANG: 'en', LEO_PROFILE: 'default' };
@@ -84,7 +84,7 @@ test('парсер вердикта понимает ключ reader и стар
 
 test('EN: блокировка по-английски; английский итог тоже проверяется', () => {
   const sb = sandbox();
-  const r = runHook('stop.mjs', inp(enReply), { ...sb.env, ...EN, LEO_FAKE_MODE: 'skeptic' });
+  const r = runHook('stop.mjs', inp(enReply), { ...sb.env, ...EN, LEO_MODE: 'block', LEO_FAKE_MODE: 'skeptic' });
   assert.equal(r.json.decision, 'block');
   assert.match(r.json.reason, /Leo's check/);
   assert.doesNotMatch(r.json.reason, /Проверка Leo/);
@@ -103,11 +103,18 @@ test('плохие значения в config.json игнорируются, а 
   const sb = sandbox();
   writeFileSync(join(sb.home, 'config.json'), JSON.stringify({ mode: 'loud', minLength: 'abc', model: 'sonnet' }));
   const c = loadConfig(sb.env);
-  assert.equal(c.mode, 'block');
+  assert.equal(c.mode, 'advice');
   assert.equal(c.minLength, 600);
   assert.equal(c.model, 'sonnet');
   writeFileSync(join(sb.home, 'config.json'), '{not json');
-  assert.equal(loadConfig(sb.env).mode, 'block');
+  assert.equal(loadConfig(sb.env).mode, 'advice');
+});
+
+test('режим по умолчанию для новых пользователей — advice (без config.json и без LEO_MODE)', () => {
+  const sb = sandbox();
+  assert.equal(loadConfig(sb.env).mode, 'advice');
+  assert.equal(DEFAULTS.mode, 'advice');
+  assert.equal(JSON.parse(readFileSync(join(ROOT, 'docs', 'config.schema.json'), 'utf8')).properties.mode.default, 'advice');
 });
 
 test('mode advice: серьёзная находка — подсказка без block', () => {
@@ -203,7 +210,7 @@ test('doctor по-русски при LEO_LANG=ru', () => {
 test('status и log работают', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp(longReply()), { ...sb.env, LEO_FAKE_MODE: 'skeptic' });
-  assert.match(runCli(['status'], { ...sb.env, ...EN }).stdout, /Leo 0\.\d+\.\d+: language en, mode block/);
+  assert.match(runCli(['status'], { ...sb.env, ...EN }).stdout, /Leo 0\.\d+\.\d+: language en, mode advice/);
   const l = runCli(['log'], { ...sb.env, ...EN });
   assert.match(l.stdout, /1 blocks/);
   assert.match(l.stdout, /Cost \$0\.0003/);

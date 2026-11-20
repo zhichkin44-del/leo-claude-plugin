@@ -59,7 +59,7 @@ claude plugin install leo@leo-marketplace
 | Ключ | По умолчанию | Смысл |
 |---|---|---|
 | `lang` | по локали, иначе `en` | `en` или `ru`: язык сообщений Leo и запроса к Haiku (`LEO_LANG` важнее) |
-| `mode` | `block` | `block` возвращает ответ на доработку; `advice` только подсказывает (`LEO_MODE`) |
+| `mode` | `advice` | `advice` только подсказывает; `block` возвращает ответ на доработку (`LEO_MODE`) |
 | `minLength` | `600` | ответы такой длины проверяются и без слов-утверждений (`LEO_MIN_LENGTH`) |
 | `triggers` | `[]` | свои слова-утверждения |
 | `model` | `haiku` | модель проверки (`LEO_MODEL`) |
