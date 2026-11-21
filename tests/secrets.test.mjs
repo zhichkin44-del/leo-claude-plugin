@@ -35,7 +35,7 @@ const POSITIVE = [
 ];
 
 const NEGATIVE = [
-  'C:\Studio\repos\norma-hr\.env',
+  '<project-dir>\repos\norma-hr\.env',
   'see .env.example for the list of variables',
   'docs/credentials-guide.md',
   'src/config/dotenv.env.js',
@@ -79,7 +79,7 @@ for (const s of NEGATIVE) {
 }
 
 test('T-secret-1: path to .env stays, the value inside is masked', () => {
-  const p = 'C:\Studio\repos\norma-hr\.env';
+  const p = '<project-dir>\repos\norma-hr\.env';
   assert.equal(redact(p), p);
   assert.equal(redact('прочитал ' + p + ' и увидел'), 'прочитал ' + p + ' и увидел');
   const o = redact(p + ': DB_PASSWORD=hunter2hunter2');
