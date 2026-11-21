@@ -6,6 +6,12 @@ MIT · Node.js 18+ · Windows, macOS, Linux · zero dependencies
 
 ![What Leo restores after context compaction (demo records)](docs/screenshots/leo-show.png)
 
+## Requirements
+
+- Claude Code, with `claude` in PATH
+- Node.js 18+
+- Windows, macOS or Linux; zero dependencies
+
 ## Install
 
 Needs Claude Code and Node.js 18+.
@@ -105,6 +111,10 @@ Create `~/.claude/leo/config.json`. Every key is optional; the schema is in [`do
 
 Environment: `LEO_HOME`, `LEO_OFF=1` (hooks stay silent), `LEO_NO_LOG=1`, `LEO_HAIKU_TIMEOUT_MS` (default 45000), `LEO_CLAUDE` (full path to `claude`).
 
+## Usage
+
+Leo runs through Claude Code hooks (PreCompact, SessionStart, Stop); it adds no hook on every message. Inside Claude Code you can run `/leo:show`, `/leo:status`, `/leo:doctor`, `/leo:off` and `/leo:on`.
+
 ## Commands
 
 Inside Claude Code: `/leo:show` (what Leo would restore now), `/leo:status`, `/leo:doctor`, `/leo:off`, `/leo:on`.
@@ -135,7 +145,7 @@ Run `/leo:doctor` first; each `[FIX ]` line says what to do.
 
 - Needs the `claude` CLI signed in and online for the answer check.
 - The check is probabilistic: Haiku can miss a finding or nitpick. A serious finding gives one block round, then the answer goes through.
-- Automatic collection is heuristic: it sees open `TodoWrite` tasks, the last substantial user message, sentences with words like always/never/всегда/никогда, and the last edited files. It does not understand the conversation; use `rule add`, `wait add`, `promise add` for what matters most.
+- Automatic collection is heuristic: it sees open `TodoWrite` tasks, the last substantial user message, sentences with words like always/never (and their Russian equivalents), and the last edited files. It does not understand the conversation; use `rule add`, `wait add`, `promise add` for what matters most.
 - The `PostCompact` hook only writes a journal entry; the restore itself comes from `SessionStart` with the `compact` matcher.
 - Tests were developed on Windows; macOS and Linux are covered by the CI workflow in `.github/workflows/ci.yml` (3 systems x Node 18/20/22), which runs after the first push.
 - The secret filter is a safety net: it knows common token formats and `KEY=value` lines, not every secret in the world.
@@ -143,6 +153,10 @@ Run `/leo:doctor` first; each `[FIX ]` line says what to do.
 ## Contributing
 
 `npm test` runs everything with a fake `claude` (`tests/fake-claude.mjs`), no network. To add a secret rule, add it to `lib/secrets.mjs` and a positive and a negative sample to `tests/secrets.test.mjs`. Messages live in `lib/i18n.mjs`; a test checks that English and Russian have the same keys.
+
+## Tests
+
+`npm test` runs the test suite (`scripts/run-tests.mjs`, files in `tests/`) with a fake `claude` (`tests/fake-claude.mjs`), so no network is used. `npm run check` checks syntax.
 
 ## License
 
