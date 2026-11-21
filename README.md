@@ -1,6 +1,10 @@
 # Leo
 
-**Leo keeps Claude Code on track: it restores your sessions, promises and rules after context compaction, and has a Haiku skeptic fact-check the final answer before you see it.**
+[![release](https://img.shields.io/github/v/release/zhichkin44-del/leo-claude-plugin)](https://github.com/zhichkin44-del/leo-claude-plugin/releases)
+
+Claude Code loses its working context after compaction: open tasks, your last request and standing instructions are gone.
+Leo restores them at session start, in at most 40 lines, from the session transcript and its own state file.
+Leo also double-checks final answers with a Haiku-based skeptic before they reach you.
 
 MIT · Node.js 18+ · Windows, macOS, Linux · zero dependencies
 
