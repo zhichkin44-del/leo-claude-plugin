@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// `node --check` для всех .mjs без зависимостей (линтер синтаксиса).
+// `node --check` for all .mjs files, no dependencies (syntax linter).
 import { readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

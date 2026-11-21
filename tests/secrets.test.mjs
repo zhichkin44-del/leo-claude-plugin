@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { redact } from '../lib/secrets.mjs';
 import { FK } from './helpers.mjs';
 
-// Образцы собираются из кусков: в исходниках не должно лежать ничего, похожего на настоящий ключ.
+// Samples are assembled from pieces: nothing that looks like a real key may sit in the sources.
 const j = (...p) => p.join('');
 const POSITIVE = [
   ['openai-style key', FK.sk],

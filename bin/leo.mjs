@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CLI Leo: show / status / log / doctor, и записи о сессиях, ожидании, обещаниях и правилах. Состояние — ~/.claude/leo/state.json.
+// Leo CLI: show / status / log / doctor, and records of sessions, waiting items, promises and rules. State: ~/.claude/leo/state.json.
 import { writeFileSync, rmSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadState, saveState, leoHome, clean, newId, now, today, sameText, MAX } from '../lib/state.mjs';

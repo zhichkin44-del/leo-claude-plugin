@@ -1,4 +1,4 @@
-// SessionStart (compact | resume): возвращает в контекст главное — задачи и просьбу из этой сессии, окна, ожидание, правила, обещанное.
+// SessionStart (compact | resume): returns the essentials into context: tasks and the request from this session, windows, waiting items, rules, promises.
 import { runHook, additionalContext } from '../lib/io.mjs';
 import { buildRestore } from '../lib/restore.mjs';
 import { collectFromTranscript, saveSession } from '../lib/collect.mjs';

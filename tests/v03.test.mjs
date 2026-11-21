@@ -47,7 +47,7 @@ test('t(): подстановка переменных и запасной кл�
   assert.equal(t('нет-такого-ключа', { LEO_LANG: 'en', ...NOHOME }), 'нет-такого-ключа');
 });
 
-// ---------- промпт без внутреннего жаргона ----------
+// ---------- prompt without internal jargon ----------
 test('EN-промпт Haiku: по-английски, без жаргона автора', () => {
   const sb = sandbox();
   const p = buildPrompt(enReply, emptyState(), { ...sb.env, ...EN }, ['fix the login page']);
@@ -91,7 +91,7 @@ test('EN: блокировка по-английски; английский и�
   assert.equal(sb.fakeCalls().length, 1);
 });
 
-// ---------- настройки ----------
+// ---------- settings ----------
 test('config.json: схема валидируется, ошибки понятны', () => {
   assert.deepEqual(validateConfig({ mode: 'advice', minLength: 300, roles: { reader: false }, triggers: ['ship it'], model: 'haiku' }), []);
   const bad = validateConfig({ mode: 'loud', minLength: -1, roles: { boss: true }, nope: 1, log: 'yes' });
@@ -162,7 +162,7 @@ test('ruleTtlDays: правило вчерашнего дня живёт при 
   assert.ok(buildPrompt('x', st, sb.env).includes('ВЧЕРАШНЕЕ-ПРАВИЛО'));
 });
 
-// ---------- leo doctor: 5 из 5 поломок ----------
+// ---------- leo doctor: 5 of 5 breakages ----------
 const doctor = (env, args = []) => runCli(['doctor', ...args], { ...env, ...EN });
 
 test('doctor: здоровая среда — 0 исправлений, код 0', () => {
@@ -217,7 +217,7 @@ test('status и log работают', () => {
   assert.match(runCli(['log'], { ...EN, LEO_HOME: join(sb.dir, 'empty') }).stdout, /No Leo events yet/);
 });
 
-// ---------- команды /leo:* и README ----------
+// ---------- /leo:* commands and README ----------
 for (const name of ['show', 'status', 'doctor', 'off', 'on']) {
   test('skill /leo:' + name + ' на месте и зовёт CLI', () => {
     const f = join(ROOT, 'skills', name, 'SKILL.md');

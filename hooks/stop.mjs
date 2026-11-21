@@ -1,4 +1,4 @@
-// Stop: если ответ — итог для Саши, один вызов Haiku (роли «Саша» и «скептик»); серьёзная находка → block, иначе тишина.
+// Stop: if the reply is a final answer for the owner, one Haiku call (roles "reader" and "skeptic"); a serious finding -> block, otherwise silence.
 import { runHook } from '../lib/io.mjs';
 import { reviewReply } from '../lib/skeptic.mjs';
 

@@ -1,4 +1,4 @@
-// Подставной `claude` для тестов: читает stdin, пишет вызов в LEO_FAKE_LOG, отвечает по LEO_FAKE_MODE.
+// Fake `claude` for tests: reads stdin, writes the call to LEO_FAKE_LOG, answers according to LEO_FAKE_MODE.
 import { appendFileSync } from 'node:fs';
 const argv = process.argv.slice(2);
 if (argv.includes('--version')) { process.stdout.write('9.9.9 (Claude Code)' + String.fromCharCode(10)); process.exit(0); }

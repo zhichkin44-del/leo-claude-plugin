@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Запуск тестов: список файлов собираем сами, потому что `node --test "tests/*.test.mjs"` не раскрывает маску на Node 18/20 и на Windows.
-// Использование: node scripts/run-tests.mjs [--coverage]
+// Runs the tests. The file list is collected here, because `node --test "tests/*.test.mjs"` does not expand the glob on Node 18/20 and on Windows.
+// Usage: node scripts/run-tests.mjs [--coverage]
 import { readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

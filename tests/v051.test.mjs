@@ -6,7 +6,7 @@ import { sandbox, runHook, longReply, ROOT } from './helpers.mjs';
 import { findClaude, standardLocations, noteClaudeMissingOnce } from '../lib/haiku.mjs';
 import { validateConfig } from '../lib/config.mjs';
 
-// Поддельный файл claude в каталоге песочницы: поиск проверяем по существованию файла.
+// Fake claude file in the sandbox directory: the lookup is checked by file existence.
 function fake(sb, ...parts) {
   const p = join(sb.dir, ...parts);
   mkdirSync(join(p, '..'), { recursive: true });
@@ -24,16 +24,16 @@ test('claude на Windows: порядок LEO_CLAUDE → config → PATH → с�
   const env = { ...bare(sb), PATH: pathDir };
   const win = { platform: 'win32', configured: '' };
 
-  // только стандартное место (PATH пуст)
+  // only the standard location (PATH is empty)
   assert.deepEqual(findClaude({ ...bare(sb) }, win), { cmd: std, pre: [], source: 'standard', found: true });
-  // PATH важнее стандартного места
+  // PATH takes precedence over the standard location
   assert.equal(findClaude(env, win).cmd, inPath);
   assert.equal(findClaude(env, win).source, 'PATH');
-  // config важнее PATH
+  // config takes precedence over PATH
   assert.deepEqual(findClaude(env, { platform: 'win32', configured: cfg }), { cmd: cfg, pre: [], source: 'config', found: true });
-  // LEO_CLAUDE важнее config
+  // LEO_CLAUDE takes precedence over config
   assert.equal(findClaude({ ...env, LEO_CLAUDE: std }, { platform: 'win32', configured: cfg }).source, 'LEO_CLAUDE');
-  // config с несуществующим путём — переходим дальше по цепочке
+  // config with a nonexistent path: move on along the chain
   assert.equal(findClaude(env, { platform: 'win32', configured: join(sb.dir, 'нет', 'claude.exe') }).source, 'PATH');
 });
 
@@ -44,7 +44,7 @@ test('claude на Windows: npm-шим claude.cmd запускается чере
   assert.equal(r.cmd, cmd);
   assert.equal(r.shell, true);
   assert.equal(r.source, 'standard');
-  // шим рядом с настоящим exe: берём exe, shell не нужен
+  // a shim next to the real exe: use the exe, no shell needed
   const real = fake(sb, 'ap', 'npm', 'node_modules', '@anthropic-ai', 'claude-code', 'bin', 'claude.exe');
   const r2 = findClaude(bare(sb), { platform: 'win32', configured: cmd });
   assert.equal(r2.cmd, real);

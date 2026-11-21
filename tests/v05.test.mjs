@@ -28,7 +28,7 @@ const sample = (sb) => transcript(sb, [
   user('Now run the tests and show me the output'),
 ]);
 
-// ---------- автосбор ----------
+// ---------- auto-collect ----------
 test('collect: открытые задачи из TodoWrite (завершённые не берём)', () => {
   const sb = sandbox();
   const c = collectFromTranscript(sample(sb));
@@ -80,7 +80,7 @@ test('collect: сообщения подагентов (isSidechain) игнор�
   assert.deepEqual(c.rules, []);
 });
 
-// ---------- хуки ----------
+// ---------- hooks ----------
 test('hooks.json: SessionStart, PreCompact, PostCompact, Stop; нет хука на каждое сообщение', () => {
   const h = JSON.parse(readFileSync(join(ROOT, 'hooks', 'hooks.json'), 'utf8')).hooks;
   assert.deepEqual(Object.keys(h).sort(), ['PostCompact', 'PreCompact', 'SessionStart', 'Stop']);
@@ -133,7 +133,7 @@ test('хуки сжатия: мусор на входе и выключател�
   assert.equal(sb.state(), null);
 });
 
-// ---------- «из коробки» ----------
+// ---------- out of the box ----------
 const noSources = (sb) => ({ ...sb.env, ...EN, LEO_STATUS: '', LEO_HANDOFF_DIR: '', LEO_MEMORY_INDEX: '' });
 
 test('из коробки: без настройки и без записей Leo после сжатия возврат непустой — 5 прогонов из 5', () => {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Сканер секретов по всей истории git (без зависимостей). Запасной вариант к gitleaks: ищет типичные форматы ключей
-// в добавленных строках всех коммитов. Выход 0 — находок нет.
+// Secret scanner over the whole git history (no dependencies). A fallback for gitleaks: it looks for typical key formats
+// in the added lines of all commits. Exit code 0 means no findings.
 import { spawnSync } from 'node:child_process';
 
 const PATTERNS = [

@@ -1,4 +1,4 @@
-// PreCompact: пока транскрипт цел, собрать состояние сессии (задачи, просьба, указания, файлы) и сохранить под session_id.
+// PreCompact: while the transcript is intact, collect the session state (tasks, request, instructions, files) and save it under session_id.
 import { runHook } from '../lib/io.mjs';
 import { collectFromTranscript, saveSession } from '../lib/collect.mjs';
 import { loadConfig } from '../lib/config.mjs';

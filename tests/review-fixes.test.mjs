@@ -1,4 +1,4 @@
-// Находки ревью Haiku-скептика (14.11): каждая — тест.
+// Findings from the Haiku-skeptic review (14.11). Each one is a test.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { sandbox, runHook, FK } from './helpers.mjs';

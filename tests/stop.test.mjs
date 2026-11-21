@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { sandbox, runHook, longReply, ROOT, FK } from './helpers.mjs';
 
 const inp = (msg, extra = {}) => ({ session_id: 's', hook_event_name: 'Stop', stop_hook_active: false, last_assistant_message: msg, cwd: '.', ...extra });
-// LEO_MODE=block: эти тесты проверяют блокировку; по умолчанию режим advice.
+// LEO_MODE=block: these tests check blocking; the default mode is advice.
 const env = (sb, mode, more = {}) => ({ ...sb.env, LEO_FAKE_MODE: mode, LEO_MODE: 'block', ...more });
 
 test('не итог (короткий ответ) — Haiku не зовём', () => {
@@ -176,7 +176,7 @@ test('в запросе есть вопрос про новое устойчив
   assert.match(input, /устойчив/i);
   assert.match(input, /никогда не видел такого красивого дизайна/);
   assert.match(input, /сомнева|не уверен/i);
-  // слова-триггеры допустимы только внутри текста запроса к Haiku (строка в кавычках), но не в условиях/регулярках кода
+  // trigger words are allowed only inside the request text to Haiku (a quoted string), not in code conditions or regexes
   const bad = [];
   for (const f of ['lib/skeptic.mjs', 'lib/transcript.mjs', 'lib/restore.mjs', 'lib/io.mjs', 'lib/state.mjs', 'bin/leo.mjs', 'hooks/stop.mjs', 'hooks/session-start.mjs']) {
     readFileSync(join(ROOT, f), 'utf8').split('\n').forEach((l, n) => {

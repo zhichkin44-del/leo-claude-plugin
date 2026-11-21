@@ -1,4 +1,4 @@
-// PostCompact: только отметка в журнале (счётчик сжатий). Возврат контекста делает SessionStart с matcher "compact".
+// PostCompact: only a journal mark (compaction counter). Context is restored by SessionStart with matcher "compact".
 import { runHook } from '../lib/io.mjs';
 import { logEvent } from '../lib/state.mjs';
 

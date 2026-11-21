@@ -48,7 +48,7 @@ export function sandbox() {
   };
 }
 
-// Запускает хук как отдельный процесс, подставляя stdin. input — объект (в JSON) или строка (как есть).
+// Runs the hook as a separate process, feeding stdin. input is an object (as JSON) or a string (as is).
 export function runHook(name, input, env = {}, opts = {}) {
   const stdin = typeof input === 'string' ? input : input === undefined ? '' : JSON.stringify(input);
   const t0 = Date.now();
@@ -73,7 +73,7 @@ export function tryJson(s) {
 export const longReply = (extra = '') =>
   ('Сделано: слил PR 12, проверил на стенде. ' + extra + 'Дальше — окно alpha. ').repeat(20);
 
-/** Поддельные секреты для проверки фильтра: собираются на лету, чтобы в исходниках не лежало ничего, похожего на ключ. */
+/** Fake secrets for checking the filter. Assembled at runtime so that nothing that looks like a key sits in the sources. */
 export const FK = {
   sk: ['sk', 'abcdefghijklmnop1234'].join('-'),
   ghp: ['ghp', 'abcdefghijklmnopqrst1234'].join('_'),

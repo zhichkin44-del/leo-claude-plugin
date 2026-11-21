@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Порог покрытия строк для lib/: среднее по файлам lib/ из отчёта `node --test --experimental-test-coverage` (файл или stdin).
-// Использование: node scripts/check-coverage.mjs report.txt [порог=85]
+// Line-coverage threshold for lib/: average over the lib/ files in the report of `node --test --experimental-test-coverage` (file or stdin).
+// Usage: node scripts/check-coverage.mjs report.txt [threshold=85]
 import { readFileSync } from 'node:fs';
 
 const file = process.argv[2];
