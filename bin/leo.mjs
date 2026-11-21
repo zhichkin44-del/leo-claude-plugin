@@ -27,13 +27,13 @@ function readLog(n) {
   let lines = [];
   try {
     lines = readFileSync(join(leoHome(env), 'leo.log'), 'utf8').split('\n').filter(Boolean);
-  } catch { /* нет журнала */ }
+  } catch { /* no journal */ }
   const ev = [];
   for (const l of lines) {
     try {
       const o = JSON.parse(l);
       if (o.event === 'stop') ev.push(o);
-    } catch { /* битая строка */ }
+    } catch { /* broken line */ }
   }
   return ev.slice(-n);
 }

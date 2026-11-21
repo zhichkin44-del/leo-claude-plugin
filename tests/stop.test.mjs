@@ -8,7 +8,7 @@ const inp = (msg, extra = {}) => ({ session_id: 's', hook_event_name: 'Stop', st
 // LEO_MODE=block: these tests check blocking; the default mode is advice.
 const env = (sb, mode, more = {}) => ({ ...sb.env, LEO_FAKE_MODE: mode, LEO_MODE: 'block', ...more });
 
-test('не итог (короткий ответ) — Haiku не зовём', () => {
+test('not a final answer (short reply) — Haiku is not called', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp('Ок, понял.'), env(sb, 'owner'));
   assert.equal(r.code, 0);
@@ -16,7 +16,7 @@ test('не итог (короткий ответ) — Haiku не зовём', ()
   assert.equal(sb.fakeCalls().length, 0);
 });
 
-test('короткий, но с «слито/готово» и длиной ≥ 120 — это итог, зовём ровно один раз', () => {
+test('short but with "merged/done" and length ≥ 120 — a final answer, called exactly once', () => {
   const sb = sandbox();
   const msg = 'Готово: PR 12 слит в main, тесты зелёные, стенд проверил. владелец, можешь смотреть витрину по ссылке на странице проекта, там же лежат снимки экрана.';
   assert.ok(msg.length >= 120);
@@ -24,13 +24,13 @@ test('короткий, но с «слито/готово» и длиной ≥ 
   assert.equal(sb.fakeCalls().length, 1);
 });
 
-test('длинный ответ без слов-утверждений тоже итог (≥ 600 знаков)', () => {
+test('a long reply without claim words is also a final answer (≥ 600 chars)', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp('Вот разбор по пунктам. '.repeat(40)), env(sb, 'ok'));
   assert.equal(sb.fakeCalls().length, 1);
 });
 
-test('нет находок → тишина, код 0, один вызов, запись в журнал', () => {
+test('no findings → silence, exit code 0, one call, journal entry', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'ok'));
   assert.equal(r.code, 0);
@@ -39,7 +39,7 @@ test('нет находок → тишина, код 0, один вызов, з�
   assert.match(sb.log(), /"event":"stop"/);
 });
 
-test('серьёзная находка «владельца» → decision block + reason с текстом находки', () => {
+test('serious "owner" finding → decision block + reason with the finding text', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'owner'));
   assert.equal(r.code, 0);
@@ -49,7 +49,7 @@ test('серьёзная находка «владельца» → decision bloc
   assert.equal(sb.fakeCalls().length, 1);
 });
 
-test('серьёзная находка «скептика» → block', () => {
+test('serious "skeptic" finding → block', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'skeptic'));
   assert.equal(r.json.decision, 'block');
@@ -57,13 +57,13 @@ test('серьёзная находка «скептика» → block', () => {
   assert.match(r.json.reason, /скептик/i);
 });
 
-test('только мелкие находки → не блокируем', () => {
+test('only minor findings → do not block', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'minor'));
   assert.equal(r.stdout.trim(), '');
 });
 
-test('защита от петли: stop_hook_active=true → никаких вызовов и блоков', () => {
+test('loop guard: stop_hook_active=true → no calls and no blocks', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply(), { stop_hook_active: true }), env(sb, 'owner'));
   assert.equal(r.code, 0);
@@ -71,7 +71,7 @@ test('защита от петли: stop_hook_active=true → никаких в�
   assert.equal(sb.fakeCalls().length, 0);
 });
 
-test('петля целиком: первый Stop блокирует, второй (stop_hook_active) пропускает — всего 1 вызов Haiku', () => {
+test('whole loop: first Stop blocks, second (stop_hook_active) passes — 1 Haiku call in total', () => {
   const sb = sandbox();
   const first = runHook('stop.mjs', inp(longReply()), env(sb, 'owner'));
   assert.equal(first.json.decision, 'block');
@@ -80,7 +80,7 @@ test('петля целиком: первый Stop блокирует, втор�
   assert.equal(sb.fakeCalls().length, 1);
 });
 
-test('текст находок ограничен: не больше 3 находок, каждая ≤ 240 знаков', () => {
+test('finding text is limited: at most 3 findings, each ≤ 240 chars', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'many'));
   assert.equal(r.json.decision, 'block');
@@ -89,13 +89,13 @@ test('текст находок ограничен: не больше 3 нахо
   assert.ok(lines.every((l) => l.length <= 260));
 });
 
-test('ответ Haiku в «забор» ```json — принимаем', () => {
+test('Haiku reply wrapped in a ```json fence — accepted', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'fenced'));
   assert.equal(r.json.decision, 'block');
 });
 
-test('Haiku вернул не JSON → тихий пропуск, код 0', () => {
+test('Haiku returned non-JSON → silent skip, exit code 0', () => {
   const sb = sandbox();
   for (const mode of ['garbage', 'rawgarbage']) {
     const r = runHook('stop.mjs', inp(longReply()), env(sb, mode));
@@ -104,7 +104,7 @@ test('Haiku вернул не JSON → тихий пропуск, код 0', () 
   }
 });
 
-test('Haiku упал (код 1) → тихий пропуск', () => {
+test('Haiku failed (exit code 1) → silent skip', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'fail'));
   assert.equal(r.code, 0);
@@ -112,30 +112,30 @@ test('Haiku упал (код 1) → тихий пропуск', () => {
   assert.match(sb.log(), /haiku/i);
 });
 
-test('Haiku завис → таймаут, тихий пропуск, быстро', () => {
+test('Haiku hung → timeout, silent skip, fast', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'hang', { LEO_HAIKU_TIMEOUT_MS: '1500' }), { timeout: 20000 });
   assert.equal(r.code, 0);
   assert.equal(r.stdout.trim(), '');
-  assert.ok(r.ms < 10000, 'ушло ' + r.ms + ' мс');
+  assert.ok(r.ms < 10000, 'took ' + r.ms + ' ms');
   assert.match(sb.log(), /timeout/i);
 });
 
-test('claude не найден → тихий пропуск', () => {
+test('claude not found → silent skip', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), { ...sb.env, LEO_CLAUDE: 'C:/нет/такого/claude-xyz' });
   assert.equal(r.code, 0);
   assert.equal(r.stdout.trim(), '');
 });
 
-test('внутренний вызов (LEO_INNER=1) и LEO_OFF=1 — не зовём', () => {
+test('inner call (LEO_INNER=1) and LEO_OFF=1 — not called', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp(longReply()), env(sb, 'owner', { LEO_INNER: '1' }));
   runHook('stop.mjs', inp(longReply()), env(sb, 'owner', { LEO_OFF: '1' }));
   assert.equal(sb.fakeCalls().length, 0);
 });
 
-test('Haiku запускается без хуков и инструментов, на haiku, JSON, с LEO_INNER', () => {
+test('Haiku runs without hooks and tools, on haiku, JSON, with LEO_INNER', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp(longReply()), env(sb, 'ok'));
   const c = sb.fakeCalls()[0];
@@ -151,7 +151,7 @@ test('Haiku запускается без хуков и инструментов
 
 const userLine = (content, extra = {}) => JSON.stringify({ type: 'user', isSidechain: false, message: { role: 'user', content }, ...extra });
 
-test('в Haiku уходит ответ без секретов + последние сообщения владельца из транскрипта + открытые обещания и правила дня', () => {
+test('Haiku receives the reply without secrets + the owner\'s last messages from the transcript + open promises and day rules', () => {
   const sb = sandbox();
   sb.setState({
     version: 1, windows: {}, waiting: [],
@@ -169,7 +169,7 @@ test('в Haiku уходит ответ без секретов + последн�
   assert.match(input, /скептик/i);
 });
 
-test('в запросе есть вопрос про новое устойчивое указание и пример-не-правило; слов-триггеров в коде нет', () => {
+test('the request asks about a new standing instruction and a non-rule example; no trigger words in code', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp(longReply()), env(sb, 'ok'));
   const input = sb.fakeCalls()[0].input;
@@ -183,10 +183,10 @@ test('в запросе есть вопрос про новое устойчив
       if (/всегда|никогда|запомни|впредь/i.test(l) && !/^\s*('|\/\/)/.test(l)) bad.push(f + ':' + (n + 1) + ' ' + l.trim().slice(0, 80));
     });
   }
-  assert.deepEqual(bad, [], 'слова-триггеры в коде');
+  assert.deepEqual(bad, [], 'trigger words in code');
 });
 
-test('подсказка о правиле без серьёзных находок → мягкая подсказка (additionalContext), не block, с оговоркой «проверь и реши»', () => {
+test('rule hint without serious findings → soft hint (additionalContext), not block, with the "check and decide" caveat', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'hint'));
   assert.equal(r.code, 0);
@@ -196,10 +196,10 @@ test('подсказка о правиле без серьёзных наход�
   assert.match(c, /похоже на новое правило/i);
   assert.match(c, /Не сливать PR без проверки на стенде/);
   assert.match(c, /проверь и реши/i);
-  assert.equal(sb.state()?.rules?.length ?? 0, 0, 'Leo сам правило не записывает');
+  assert.equal(sb.state()?.rules?.length ?? 0, 0, 'Leo does not write the rule itself');
 });
 
-test('подсказка вместе с серьёзной находкой → в причине block', () => {
+test('hint together with a serious finding → in the block reason', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'hintblock'));
   assert.equal(r.json.decision, 'block');
@@ -207,7 +207,7 @@ test('подсказка вместе с серьёзной находкой →
   assert.match(r.json.reason, /проверь и реши/i);
 });
 
-test('одну и ту же подсказку второй раз не повторяем; при stop_hook_active — тоже тихо', () => {
+test('the same hint is not repeated the second time; with stop_hook_active — also silent', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp(longReply()), env(sb, 'hint'));
   const r2 = runHook('stop.mjs', inp(longReply('ещё ')), env(sb, 'hint'));
@@ -217,14 +217,14 @@ test('одну и ту же подсказку второй раз не повт
   assert.equal(r3.stdout.trim(), '');
 });
 
-test('кривая подсказка (строка вместо объекта) — игнорируем', () => {
+test('malformed hint (string instead of object) — ignored', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'hintbad'));
   assert.equal(r.code, 0);
   assert.equal(r.stdout.trim(), '');
 });
 
-test('обещания из ответа скептика попадают в состояние (без дублей)', () => {
+test('promises from the skeptic reply go into the state (no duplicates)', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp(longReply()), env(sb, 'promises'));
   runHook('stop.mjs', inp(longReply('ещё раз ')), env(sb, 'promises'));
@@ -232,7 +232,7 @@ test('обещания из ответа скептика попадают в с
   assert.deepEqual(texts.sort(), ['Проверить окно alpha после обеда', 'Слить PR 12'].sort());
 });
 
-test('кривой вход: код 0, тишина, без вызова Haiku', () => {
+test('malformed input: exit code 0, silence, no Haiku call', () => {
   const sb = sandbox();
   for (const bad of ['', 'null', '[]', 'мусор', '{}', '{"last_assistant_message":null}', '{"last_assistant_message":42}', '{"last_assistant_message":{"a":1}}', '"строка"']) {
     const r = runHook('stop.mjs', bad, env(sb, 'owner'));
@@ -242,7 +242,7 @@ test('кривой вход: код 0, тишина, без вызова Haiku',
   assert.equal(sb.fakeCalls().length, 0);
 });
 
-test('сбой внутри хука → журнал и код 0, без блока', () => {
+test('failure inside the hook → journal entry and exit code 0, no block', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(longReply()), env(sb, 'owner', { LEO_TEST_CRASH: '1' }));
   assert.equal(r.code, 0);
@@ -250,7 +250,7 @@ test('сбой внутри хука → журнал и код 0, без бло
   assert.match(sb.log(), /stop/);
 });
 
-test('очень длинный ответ обрезается перед отправкой (≤ 8000 знаков в сообщении)', () => {
+test('a very long reply is truncated before sending (≤ 8000 chars in the message)', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp('Готово. '.repeat(5000)), env(sb, 'ok'));
   assert.ok(sb.fakeCalls()[0].input.length < 14000);

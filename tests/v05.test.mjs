@@ -29,19 +29,19 @@ const sample = (sb) => transcript(sb, [
 ]);
 
 // ---------- auto-collect ----------
-test('collect: открытые задачи из TodoWrite (завершённые не берём)', () => {
+test('collect: open tasks from TodoWrite (completed ones are not taken)', () => {
   const sb = sandbox();
   const c = collectFromTranscript(sample(sb));
   assert.deepEqual(c.tasks, ['Rewrite error messages (in progress)', 'Update docs']);
 });
 
-test('collect: последняя просьба — без служебных сообщений', () => {
+test('collect: last request — without service messages', () => {
   const sb = sandbox();
   const c = collectFromTranscript(sample(sb));
   assert.equal(c.intent, 'Now run the tests and show me the output');
 });
 
-test('collect: устойчивые указания «never/always/всегда/никогда», разовые просьбы не берём', () => {
+test('collect: standing instructions "never/always/всегда/никогда" are taken, one-off requests are not', () => {
   const sb = sandbox();
   const c = collectFromTranscript(sample(sb));
   assert.deepEqual(c.rules, ['Also, never commit directly to main.']);
@@ -49,13 +49,13 @@ test('collect: устойчивые указания «never/always/всегда
   assert.deepEqual(collectFromTranscript(tr).rules, ['Всегда пиши коротко.']);
 });
 
-test('collect: тронутые файлы — последние, без повторов', () => {
+test('collect: touched files — the latest, without repeats', () => {
   const sb = sandbox();
   const tr = transcript(sb, [edit('/a.js'), edit('/b.js'), edit('/a.js'), edit('/c.js', 'MultiEdit')]);
   assert.deepEqual(collectFromTranscript(tr).files, ['/b.js', '/a.js', '/c.js']);
 });
 
-test('collect: секреты в просьбах и задачах маскируются', () => {
+test('collect: secrets in requests and tasks are masked', () => {
   const sb = sandbox();
   const tr = transcript(sb, [user('use key ' + FK.sk + ' for the call, always'), todo([{ content: 'set password: hunter2hunter2', status: 'pending' }])]);
   const c = collectFromTranscript(tr);
@@ -64,7 +64,7 @@ test('collect: секреты в просьбах и задачах маскир
   assert.ok(!all.includes('hunter2'));
 });
 
-test('collect: нет файла, пустой, мусор, чужие типы — пустой результат без падения', () => {
+test('collect: no file, empty, garbage, foreign types — empty result, no crash', () => {
   const sb = sandbox();
   for (const p of [undefined, '', join(sb.dir, 'нет.jsonl'), sb.dir, transcript(sb, ['{{{', 'null', '42', '"x"'], 'junk.jsonl')]) {
     const c = collectFromTranscript(p);
@@ -72,7 +72,7 @@ test('collect: нет файла, пустой, мусор, чужие типы 
   }
 });
 
-test('collect: сообщения подагентов (isSidechain) игнорируются', () => {
+test('collect: subagent messages (isSidechain) are ignored', () => {
   const sb = sandbox();
   const tr = transcript(sb, [user('main request here ok'), user('sidechain never do this', { isSidechain: true })]);
   const c = collectFromTranscript(tr);
@@ -81,7 +81,7 @@ test('collect: сообщения подагентов (isSidechain) игнор�
 });
 
 // ---------- hooks ----------
-test('hooks.json: SessionStart, PreCompact, PostCompact, Stop; нет хука на каждое сообщение', () => {
+test('hooks.json: SessionStart, PreCompact, PostCompact, Stop; no hook on every message', () => {
   const h = JSON.parse(readFileSync(join(ROOT, 'hooks', 'hooks.json'), 'utf8')).hooks;
   assert.deepEqual(Object.keys(h).sort(), ['PostCompact', 'PreCompact', 'SessionStart', 'Stop']);
   assert.equal(h.SessionStart[0].matcher, 'compact|resume');
@@ -94,7 +94,7 @@ test('hooks.json: SessionStart, PreCompact, PostCompact, Stop; нет хука �
   }
 });
 
-test('PreCompact: сохраняет состояние сессии по session_id, молчит, код 0', () => {
+test('PreCompact: saves session state by session_id, stays silent, exit code 0', () => {
   const sb = sandbox();
   const r = runHook('precompact.mjs', { session_id: 'S1', hook_event_name: 'PreCompact', trigger: 'auto', transcript_path: sample(sb), cwd: '/repo' }, sb.env);
   assert.equal(r.code, 0);
@@ -105,7 +105,7 @@ test('PreCompact: сохраняет состояние сессии по sessio
   assert.equal(s.cwd, '/repo');
 });
 
-test('PostCompact: пишет событие в журнал, ничего не печатает', () => {
+test('PostCompact: writes an event to the journal, prints nothing', () => {
   const sb = sandbox();
   const r = runHook('postcompact.mjs', { session_id: 'S1', hook_event_name: 'PostCompact', trigger: 'auto' }, sb.env);
   assert.equal(r.code, 0);
@@ -113,14 +113,14 @@ test('PostCompact: пишет событие в журнал, ничего не 
   assert.match(sb.log(), /"event":"compact"/);
 });
 
-test('PreCompact: autoCollect=false — ничего не сохраняем', () => {
+test('PreCompact: autoCollect=false — nothing is saved', () => {
   const sb = sandbox();
   writeFileSync(join(sb.home, 'config.json'), JSON.stringify({ autoCollect: false }));
   runHook('precompact.mjs', { session_id: 'S1', transcript_path: sample(sb), cwd: '/repo' }, sb.env);
   assert.equal(sb.state(), null);
 });
 
-test('хуки сжатия: мусор на входе и выключатель — тишина и код 0', () => {
+test('compaction hooks: garbage input and the switch — silence and exit code 0', () => {
   const sb = sandbox();
   for (const name of ['precompact.mjs', 'postcompact.mjs']) {
     for (const input of ['', 'не json', '[]', 'null']) {
@@ -136,7 +136,7 @@ test('хуки сжатия: мусор на входе и выключател�
 // ---------- out of the box ----------
 const noSources = (sb) => ({ ...sb.env, ...EN, LEO_STATUS: '', LEO_HANDOFF_DIR: '', LEO_MEMORY_INDEX: '' });
 
-test('из коробки: без настройки и без записей Leo после сжатия возврат непустой — 5 прогонов из 5', () => {
+test('out of the box: without setup and without Leo entries, the resume after compaction is non-empty — 5 runs out of 5', () => {
   let nonEmpty = 0;
   for (let i = 0; i < 5; i++) {
     const sb = sandbox();
@@ -150,7 +150,7 @@ test('из коробки: без настройки и без записей Le
   assert.equal(nonEmpty, 5);
 });
 
-test('из коробки: даже без PreCompact SessionStart сам собирает состояние из транскрипта', () => {
+test('out of the box: even without PreCompact, SessionStart collects the state from the transcript itself', () => {
   const sb = sandbox();
   const env = noSources(sb);
   const r = runHook('session-start.mjs', { session_id: 'Z', source: 'compact', transcript_path: sample(sb), cwd: '/repo' }, env);
@@ -161,13 +161,13 @@ test('из коробки: даже без PreCompact SessionStart сам соб
   assert.doesNotMatch(c, /no saved state/);
 });
 
-test('из коробки: нет транскрипта и нет записей — честное «ничего нет» (не пустота и не выдумка)', () => {
+test('out of the box: no transcript and no entries — an honest "nothing" (neither blank nor made up)', () => {
   const sb = sandbox();
   const r = runHook('session-start.mjs', { session_id: 'Z', source: 'compact' }, noSources(sb));
   assert.match(r.json.hookSpecificOutput.additionalContext, /no saved state/);
 });
 
-test('если транскрипт недоступен, берём то, что PreCompact сохранил для этого session_id', () => {
+test('if the transcript is unavailable, we use what PreCompact saved for this session_id', () => {
   const sb = sandbox();
   const env = noSources(sb);
   runHook('precompact.mjs', { session_id: 'S9', transcript_path: sample(sb), cwd: '/repo' }, env);
@@ -175,7 +175,7 @@ test('если транскрипт недоступен, берём то, чт�
   assert.match(r.json.hookSpecificOutput.additionalContext, /Rewrite error messages/);
 });
 
-test('изоляция по session_id: два окна не видят задач друг друга', () => {
+test('session_id isolation: two windows do not see each other\'s tasks', () => {
   const sb = sandbox();
   const env = noSources(sb);
   const trA = transcript(sb, [user('task for window A only'), todo([{ content: 'ALPHA-TASK', status: 'pending' }])], 'a.jsonl');
@@ -188,7 +188,7 @@ test('изоляция по session_id: два окна не видят зада
   assert.ok(b.includes('BETA-TASK') && !b.includes('ALPHA-TASK'));
 });
 
-test('resume под новым session_id берёт состояние последней сессии той же папки (cwd)', () => {
+test('resume under a new session_id takes the state of the last session in the same folder (cwd)', () => {
   const sb = sandbox();
   const env = noSources(sb);
   runHook('precompact.mjs', { session_id: 'OLD', transcript_path: sample(sb), cwd: '/repo' }, env);
@@ -198,7 +198,7 @@ test('resume под новым session_id берёт состояние посл
   assert.doesNotMatch(other.json.hookSpecificOutput.additionalContext, /Rewrite error messages/);
 });
 
-test('возврат не длиннее 40 строк даже при огромном транскрипте', () => {
+test('resume is no longer than 40 lines even with a huge transcript', () => {
   const sb = sandbox();
   const lines = [];
   for (let i = 0; i < 300; i++) lines.push(user('always do thing number ' + i + ' carefully'), edit('/f' + i + '.js'));
@@ -207,7 +207,7 @@ test('возврат не длиннее 40 строк даже при огро�
   assert.ok(r.json.hookSpecificOutput.additionalContext.split('\n').length <= MAX_LINES);
 });
 
-test('ручные записи и автосбор уживаются в одном возврате', () => {
+test('manual entries and auto-collected ones coexist in one resume', () => {
   const sb = sandbox();
   const env = noSources(sb);
   runCli(['wait', 'add', 'approve the release'], env);
@@ -217,7 +217,7 @@ test('ручные записи и автосбор уживаются в одн
   assert.match(c, /Open tasks:/);
 });
 
-test('старые сессии вытесняются: хранится не больше 10', () => {
+test('old sessions are evicted: at most 10 are kept', () => {
   const sb = sandbox();
   for (let i = 0; i < 14; i++) {
     runHook('precompact.mjs', { session_id: 'S' + i, transcript_path: sample(sb), cwd: '/r' + i }, { ...sb.env, LEO_NOW: `2026-11-14T10:${String(i).padStart(2, '0')}:00+07:00` });
@@ -228,7 +228,7 @@ test('старые сессии вытесняются: хранится не б
 });
 
 // ---------- CI ----------
-test('CI: workflow на 3 ОС × Node 18/20/22, тесты, покрытие, validate, секреты, 0 зависимостей', () => {
+test('CI: workflow on 3 OS × Node 18/20/22, tests, coverage, validate, secrets, 0 dependencies', () => {
   const y = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
   for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) assert.match(y, new RegExp(os));
   for (const n of ['18', '20', '22']) assert.match(y, new RegExp("'" + n + "'"));
@@ -240,7 +240,7 @@ test('CI: workflow на 3 ОС × Node 18/20/22, тесты, покрытие, v
   assert.match(y, /fail-fast: false/);
 });
 
-test('покрытие: скрипт проверки порога 85% по lib/ есть и работает на синтетическом отчёте', () => {
+test('coverage: the 85% threshold check script over lib/ exists and works on a synthetic report', () => {
   const s = join(ROOT, 'scripts', 'check-coverage.mjs');
   assert.ok(existsSync(s));
   const mk = (pct) => ['ℹ start of coverage report', 'ℹ file | line % | branch % | funcs % | uncovered lines', 'ℹ lib | | | |', `ℹ  a.mjs | ${pct} | 80 | 80 |`, `ℹ  b.mjs | ${pct} | 80 | 80 |`, 'ℹ tests | | | |', 'ℹ  h.mjs | 10 | 80 | 80 |', 'ℹ end of coverage report'].join('\n');
@@ -251,7 +251,7 @@ test('покрытие: скрипт проверки порога 85% по lib/
   assert.equal(spawnSync(process.execPath, [s, join(d, 'bad.txt')], { encoding: 'utf8' }).status, 1);
 });
 
-test('package.json: скрипты test и coverage', () => {
+test('package.json: test and coverage scripts', () => {
   const p = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
   assert.ok(p.scripts.test);
   assert.match(p.scripts.coverage, /--coverage/);
@@ -259,7 +259,7 @@ test('package.json: скрипты test и coverage', () => {
   assert.match(p.scripts.check, /node --check|check-syntax/);
 });
 
-test('ci.yml читается как YAML-текст: нет табов, есть name и on', () => {
+test('ci.yml reads as YAML text: no tabs, has name and on', () => {
   const y = readFileSync(join(ROOT, '.github', 'workflows', 'ci.yml'), 'utf8');
   assert.doesNotMatch(y, /\t/);
   assert.match(y, /^name: /m);

@@ -14,23 +14,23 @@ const inp = (msg, extra = {}) => ({ session_id: 's', hook_event_name: 'Stop', st
 const enReply = 'Done: merged PR 12 and verified on the staging server. '.repeat(14);
 
 // ---------- i18n ----------
-test('все сообщения есть в EN и RU: наборы ключей совпадают, расхождений 0', () => {
+test('all messages exist in EN and RU: key sets match, 0 mismatches', () => {
   const en = Object.keys(CATALOG.en).sort();
   const ru = Object.keys(CATALOG.ru).sort();
-  assert.deepEqual(en.filter((k) => !ru.includes(k)), [], 'нет в ru');
-  assert.deepEqual(ru.filter((k) => !en.includes(k)), [], 'нет в en');
-  for (const k of Object.keys(CATALOG['ru:director'])) assert.ok(en.includes(k), 'профиль director: лишний ключ ' + k);
+  assert.deepEqual(en.filter((k) => !ru.includes(k)), [], 'missing in ru');
+  assert.deepEqual(ru.filter((k) => !en.includes(k)), [], 'missing in en');
+  for (const k of Object.keys(CATALOG['ru:director'])) assert.ok(en.includes(k), 'director profile: extra key ' + k);
 });
 
-test('каждый ключ t(...) в коде есть в каталоге', () => {
+test('every t(...) key used in code exists in the catalog', () => {
   const files = [...readdirSync(join(ROOT, 'lib')).map((f) => join(ROOT, 'lib', f)), join(ROOT, 'bin', 'leo.mjs')];
   const used = new Set();
   for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(/\bt\('(\w+)'/g)) used.add(m[1]);
-  for (const k of used) assert.ok(k in CATALOG.en, 'нет ключа ' + k);
+  for (const k of used) assert.ok(k in CATALOG.en, 'missing key ' + k);
   assert.ok(used.size > 40);
 });
 
-test('язык: LEO_LANG важнее всего, затем config.json, затем локаль; по умолчанию en', () => {
+test('language: LEO_LANG wins, then config.json, then locale; default en', () => {
   const sb = sandbox();
   const base = { LEO_HOME: sb.home };
   assert.equal(pickLang({ ...base, LEO_LANG: 'ru' }), 'ru');
@@ -41,14 +41,14 @@ test('язык: LEO_LANG важнее всего, затем config.json, зат
   assert.equal(pickLang({ ...base, LEO_LANG: 'en', LANG: 'en_US' }), 'en');
 });
 
-test('t(): подстановка переменных и запасной ключ', () => {
+test('t(): variable substitution and fallback for unknown keys', () => {
   assert.equal(t('docNode', { LEO_LANG: 'en', ...NOHOME }, { v: '20.1.0' }), 'Node.js 20.1.0 (need >= 18)');
   assert.match(t('docNode', { LEO_LANG: 'ru', ...NOHOME }, { v: '20.1.0' }), /нужен/);
   assert.equal(t('нет-такого-ключа', { LEO_LANG: 'en', ...NOHOME }), 'нет-такого-ключа');
 });
 
 // ---------- prompt without internal jargon ----------
-test('EN-промпт Haiku: по-английски, без жаргона автора', () => {
+test('EN Haiku prompt: in English, without author jargon', () => {
   const sb = sandbox();
   const p = buildPrompt(enReply, emptyState(), { ...sb.env, ...EN }, ['fix the login page']);
   assert.doesNotMatch(p, /[А-Яа-яЁё]/);
@@ -58,7 +58,7 @@ test('EN-промпт Haiku: по-английски, без жаргона ав
   assert.match(p, /fix the login page/);
 });
 
-test('RU-промпт по умолчанию нейтральный; жаргон «директор/владелец» — только в профиле director', () => {
+test('RU prompt is neutral by default; the director/owner jargon appears only in the director profile', () => {
   const sb = sandbox();
   const msg = 'Готово: слил PR 12. '.repeat(10);
   const neutral = buildPrompt(msg, emptyState(), { ...sb.env, LEO_LANG: 'ru', LEO_PROFILE: 'default' }, []);
@@ -68,13 +68,13 @@ test('RU-промпт по умолчанию нейтральный; жарго
   assert.match(dir, /владел/);
 });
 
-test('код не содержит зашитого жаргона вне словаря профиля', () => {
+test('code contains no hard-coded jargon outside the profile dictionary', () => {
   for (const f of ['skeptic.mjs', 'restore.mjs', 'haiku.mjs', 'io.mjs', 'doctor.mjs', 'config.mjs']) {
     assert.doesNotMatch(readFileSync(join(ROOT, 'lib', f), 'utf8'), /директор|владел|не программист/i, f);
   }
 });
 
-test('парсер вердикта понимает ключ reader и старый owner', () => {
+test('verdict parser understands the reader key and the old owner key', () => {
   const a = parseVerdict(JSON.stringify({ reader: { issues: [{ severity: 'serious', text: 'jargon' }] }, skeptic: { issues: [] } }));
   const b = parseVerdict(JSON.stringify({ owner: { issues: [{ severity: 'serious', text: 'jargon' }] }, skeptic: { issues: [] } }));
   assert.equal(a.issues[0].role, 'reader');
@@ -82,7 +82,7 @@ test('парсер вердикта понимает ключ reader и стар
   assert.match(blockReason(a.issues, null, { LEO_LANG: 'en', ...NOHOME }), /\[reader\] jargon/);
 });
 
-test('EN: блокировка по-английски; английский итог тоже проверяется', () => {
+test('EN: block message in English; English final answer is checked too', () => {
   const sb = sandbox();
   const r = runHook('stop.mjs', inp(enReply), { ...sb.env, ...EN, LEO_MODE: 'block', LEO_FAKE_MODE: 'skeptic' });
   assert.equal(r.json.decision, 'block');
@@ -92,14 +92,14 @@ test('EN: блокировка по-английски; английский и�
 });
 
 // ---------- settings ----------
-test('config.json: схема валидируется, ошибки понятны', () => {
+test('config.json: schema is validated, errors are clear', () => {
   assert.deepEqual(validateConfig({ mode: 'advice', minLength: 300, roles: { reader: false }, triggers: ['ship it'], model: 'haiku' }), []);
   const bad = validateConfig({ mode: 'loud', minLength: -1, roles: { boss: true }, nope: 1, log: 'yes' });
   assert.equal(bad.length, 5);
   JSON.parse(readFileSync(join(ROOT, 'docs', 'config.schema.json'), 'utf8'));
 });
 
-test('плохие значения в config.json игнорируются, а не валят хук', () => {
+test('bad values in config.json are ignored instead of breaking the hook', () => {
   const sb = sandbox();
   writeFileSync(join(sb.home, 'config.json'), JSON.stringify({ mode: 'loud', minLength: 'abc', model: 'sonnet' }));
   const c = loadConfig(sb.env);
@@ -110,14 +110,14 @@ test('плохие значения в config.json игнорируются, а 
   assert.equal(loadConfig(sb.env).mode, 'advice');
 });
 
-test('режим по умолчанию для новых пользователей — advice (без config.json и без LEO_MODE)', () => {
+test('default mode for new users is advice (no config.json and no LEO_MODE)', () => {
   const sb = sandbox();
   assert.equal(loadConfig(sb.env).mode, 'advice');
   assert.equal(DEFAULTS.mode, 'advice');
   assert.equal(JSON.parse(readFileSync(join(ROOT, 'docs', 'config.schema.json'), 'utf8')).properties.mode.default, 'advice');
 });
 
-test('mode advice: серьёзная находка — подсказка без block', () => {
+test('mode advice: serious finding gives a hint without block', () => {
   const sb = sandbox();
   writeFileSync(join(sb.home, 'config.json'), JSON.stringify({ mode: 'advice' }));
   const r = runHook('stop.mjs', inp(longReply()), { ...sb.env, LEO_FAKE_MODE: 'skeptic' });
@@ -126,7 +126,7 @@ test('mode advice: серьёзная находка — подсказка бе
   assert.match(sb.log(), /"verdict":"advice"/);
 });
 
-test('model и minLength из config.json доходят до вызова', () => {
+test('model and minLength from config.json reach the call', () => {
   const sb = sandbox();
   writeFileSync(join(sb.home, 'config.json'), JSON.stringify({ model: 'sonnet', minLength: 200 }));
   runHook('stop.mjs', inp('Вот разбор по пунктам. '.repeat(10)), { ...sb.env, LEO_FAKE_MODE: 'ok' });
@@ -135,7 +135,7 @@ test('model и minLength из config.json доходят до вызова', () 
   assert.equal(calls[0].args[calls[0].args.indexOf('--model') + 1], 'sonnet');
 });
 
-test('roles: обе выключены — Haiku не зовём; выключен читатель — его находки не блокируют', () => {
+test('roles: both off, Haiku is not called; reader off, its findings do not block', () => {
   const sb = sandbox();
   writeFileSync(join(sb.home, 'config.json'), JSON.stringify({ roles: { reader: false, skeptic: false } }));
   runHook('stop.mjs', inp(longReply()), { ...sb.env, LEO_FAKE_MODE: 'owner' });
@@ -146,7 +146,7 @@ test('roles: обе выключены — Haiku не зовём; выключе
   assert.equal(sb.fakeCalls().length, 1);
 });
 
-test('maxCostPerDay: после превышения проверка пропускается', () => {
+test('maxCostPerDay: after the limit is exceeded, the check is skipped', () => {
   const sb = sandbox();
   writeFileSync(join(sb.home, 'config.json'), JSON.stringify({ maxCostPerDay: 0.0005 }));
   for (let i = 0; i < 3; i++) runHook('stop.mjs', inp(longReply()), { ...sb.env, LEO_FAKE_MODE: 'ok' });
@@ -154,7 +154,7 @@ test('maxCostPerDay: после превышения проверка пропу
   assert.match(sb.log(), /"verdict":"budget"/);
 });
 
-test('ruleTtlDays: правило вчерашнего дня живёт при ruleTtlDays=2', () => {
+test('ruleTtlDays: yesterday\'s rule stays alive with ruleTtlDays=2', () => {
   const sb = sandbox();
   const st = { version: 1, windows: {}, waiting: [], promises: [], rules: [{ id: 'r1', date: '2026-11-13', ts: '', text: 'ВЧЕРАШНЕЕ-ПРАВИЛО' }], hintsSeen: [] };
   assert.ok(!buildPrompt('x', st, sb.env).includes('ВЧЕРАШНЕЕ-ПРАВИЛО'));
@@ -165,7 +165,7 @@ test('ruleTtlDays: правило вчерашнего дня живёт при 
 // ---------- leo doctor: 5 of 5 breakages ----------
 const doctor = (env, args = []) => runCli(['doctor', ...args], { ...env, ...EN });
 
-test('doctor: здоровая среда — 0 исправлений, код 0', () => {
+test('doctor: healthy environment — 0 fixes, exit code 0', () => {
   const sb = sandbox();
   sb.write('STATUS.md', '# s');
   sb.write('MEMORY.md', '- a');
@@ -176,15 +176,15 @@ test('doctor: здоровая среда — 0 исправлений, код 0
 });
 
 const BREAKS = {
-  'нет claude': (sb) => ({ ...sb.env, LEO_CLAUDE: join(sb.dir, 'нет-такого', 'claude.exe') }),
-  'нет прав записи': (sb) => { const f = join(sb.dir, 'file-not-dir'); writeFileSync(f, 'x'); return { ...sb.env, LEO_HOME: join(f, 'sub') }; },
-  'битый config': (sb) => { writeFileSync(join(sb.home, 'config.json'), '{oops'); return sb.env; },
-  'нет флага --safe-mode': (sb) => ({ ...sb.env, LEO_FAKE_NO_SAFE: '1' }),
-  'нет Node 18': (sb) => ({ ...sb.env, LEO_DOCTOR_NODE: '16.20.2' }),
+  'no claude': (sb) => ({ ...sb.env, LEO_CLAUDE: join(sb.dir, 'нет-такого', 'claude.exe') }),
+  'no write access': (sb) => { const f = join(sb.dir, 'file-not-dir'); writeFileSync(f, 'x'); return { ...sb.env, LEO_HOME: join(f, 'sub') }; },
+  'broken config': (sb) => { writeFileSync(join(sb.home, 'config.json'), '{oops'); return sb.env; },
+  'no --safe-mode flag': (sb) => ({ ...sb.env, LEO_FAKE_NO_SAFE: '1' }),
+  'no Node 18': (sb) => ({ ...sb.env, LEO_DOCTOR_NODE: '16.20.2' }),
 };
-const WHAT = { 'нет claude': /claude was not found/, 'нет прав записи': /Cannot write to/, 'битый config': /config\.json problem/, 'нет флага --safe-mode': /no --safe-mode flag/, 'нет Node 18': /too old/ };
+const WHAT = { 'no claude': /claude was not found/, 'no write access': /Cannot write to/, 'broken config': /config\.json problem/, 'no --safe-mode flag': /no --safe-mode flag/, 'no Node 18': /too old/ };
 for (const [name, mk] of Object.entries(BREAKS)) {
-  test('doctor ловит поломку: ' + name, () => {
+  test('doctor catches breakage: ' + name, () => {
     const sb = sandbox();
     const r = doctor(mk(sb));
     assert.equal(r.code, 1, r.stdout);
@@ -193,21 +193,21 @@ for (const [name, mk] of Object.entries(BREAKS)) {
   });
 }
 
-test('doctor --ping делает один пробный вызов и показывает время и цену', () => {
+test('doctor --ping makes one test call and shows time and cost', () => {
   const sb = sandbox();
   const r = doctor(sb.env, ['--ping']);
   assert.match(r.stdout, /Test call to Haiku: \d+ ms, cost \$0\.0003/);
   assert.equal(sb.fakeCalls().length, 1);
 });
 
-test('doctor по-русски при LEO_LANG=ru', () => {
+test('doctor in Russian when LEO_LANG=ru', () => {
   const sb = sandbox();
   const r = runCli(['doctor'], sb.env);
   assert.match(r.stdout, /Диагностика Leo/);
   assert.match(r.stdout, /Что уходит с вашей машины/);
 });
 
-test('status и log работают', () => {
+test('status and log work', () => {
   const sb = sandbox();
   runHook('stop.mjs', inp(longReply()), { ...sb.env, LEO_FAKE_MODE: 'skeptic' });
   assert.match(runCli(['status'], { ...sb.env, ...EN }).stdout, /Leo 0\.\d+\.\d+: language en, mode advice/);
@@ -219,7 +219,7 @@ test('status и log работают', () => {
 
 // ---------- /leo:* commands and README ----------
 for (const name of ['show', 'status', 'doctor', 'off', 'on']) {
-  test('skill /leo:' + name + ' на месте и зовёт CLI', () => {
+  test('skill /leo:' + name + ' is in place and calls the CLI', () => {
     const f = join(ROOT, 'skills', name, 'SKILL.md');
     assert.ok(existsSync(f), f);
     const s = readFileSync(f, 'utf8');
@@ -229,17 +229,13 @@ for (const name of ['show', 'status', 'doctor', 'off', 'on']) {
   });
 }
 
-test('README.md — английский; README.ru.md — русский; ссылки друг на друга', () => {
+test('README.md is in English', () => {
   const en = readFileSync(join(ROOT, 'README.md'), 'utf8');
-  const ru = readFileSync(join(ROOT, 'README.ru.md'), 'utf8');
   const cyr = (s) => (s.match(/[А-Яа-яЁё]/g) || []).length / s.length;
-  assert.ok(cyr(en) < 0.01, 'README.md должен быть английским');
-  assert.ok(cyr(ru) > 0.2, 'README.ru.md должен быть русским');
-  assert.match(en, /README\.ru\.md/);
-  assert.match(ru, /README\.md/);
+  assert.ok(cyr(en) < 0.01, 'README.md must be in English');
 });
 
-test('README.md: обязательные разделы и раздел «What leaves your machine»', () => {
+test('README.md: required sections and the "What leaves your machine" section', () => {
   const en = readFileSync(join(ROOT, 'README.md'), 'utf8');
   for (const h of ['## Install', '## What leaves your machine', '## Configuration', '## Commands', '## Troubleshooting', '## Limitations', '## Why Leo']) assert.ok(en.includes(h), h);
   assert.match(en, /8000/);
@@ -248,12 +244,7 @@ test('README.md: обязательные разделы и раздел «What 
   assert.match(en, /claude-mem/);
 });
 
-test('README.ru.md: те же главные разделы', () => {
-  const ru = readFileSync(join(ROOT, 'README.ru.md'), 'utf8');
-  for (const h of ['## Установка', '## Что уходит наружу', '## Настройки', '## Команды', '## Если не работает', '## Ограничения']) assert.ok(ru.includes(h), h);
-});
-
-test('plugin.json и marketplace.json: описание по-английски, версия совпадает с package.json', () => {
+test('plugin.json and marketplace.json: description in English, version matches package.json', () => {
   const p = JSON.parse(readFileSync(join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   assert.doesNotMatch(p.description, /[А-Яа-яЁё]/);
   assert.doesNotMatch(p.keywords.join(' '), /director/);

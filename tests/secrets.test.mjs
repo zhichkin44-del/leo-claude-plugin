@@ -35,7 +35,7 @@ const POSITIVE = [
 ];
 
 const NEGATIVE = [
-  '<project-dir>\repos\norma-hr\.env',
+  'C:\Studio\repos\norma-hr\.env',
   'see .env.example for the list of variables',
   'docs/credentials-guide.md',
   'src/config/dotenv.env.js',
@@ -61,25 +61,25 @@ const NEGATIVE = [
 ];
 
 for (const [name, secret] of POSITIVE) {
-  test('секрет маскируется: ' + name, () => {
+  test('secret is masked: ' + name, () => {
     const out = redact('before ' + secret + ' after');
     assert.notEqual(out, 'before ' + secret + ' after');
     const core = secret.split(/[:= ]/).pop().replace(/[",}]/g, '');
-    if (core.length > 8) assert.ok(!out.includes(core), 'значение осталось: ' + out);
+    if (core.length > 8) assert.ok(!out.includes(core), 'value left in output: ' + out);
   });
 }
 
-test('положительных образцов не меньше 20', () => assert.ok(POSITIVE.length >= 20));
-test('безопасных строк не меньше 20', () => assert.ok(NEGATIVE.length >= 20));
+test('at least 20 positive samples', () => assert.ok(POSITIVE.length >= 20));
+test('at least 20 safe strings', () => assert.ok(NEGATIVE.length >= 20));
 
 for (const s of NEGATIVE) {
-  test('безопасная строка не меняется: ' + s.slice(0, 50), () => {
+  test('safe string is unchanged: ' + s.slice(0, 50), () => {
     assert.equal(redact(s), s);
   });
 }
 
-test('T-secret-1: путь к .env остаётся, значение внутри маскируется', () => {
-  const p = '<project-dir>\repos\norma-hr\.env';
+test('T-secret-1: path to .env stays, the value inside is masked', () => {
+  const p = 'C:\Studio\repos\norma-hr\.env';
   assert.equal(redact(p), p);
   assert.equal(redact('прочитал ' + p + ' и увидел'), 'прочитал ' + p + ' и увидел');
   const o = redact(p + ': DB_PASSWORD=hunter2hunter2');
@@ -87,7 +87,7 @@ test('T-secret-1: путь к .env остаётся, значение внутр
   assert.ok(!o.includes('hunter2'));
 });
 
-test('содержимое .env: строки KEY=value маскируются построчно, имена переменных остаются', () => {
+test('.env contents: KEY=value lines are masked line by line, variable names stay', () => {
   const o = redact('DB_HOST=localhost\nAPI_KEY=abcd1234efgh5678\nPORT=3000');
   assert.match(o, /DB_HOST=localhost/);
   assert.match(o, /PORT=3000/);

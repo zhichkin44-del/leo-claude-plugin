@@ -50,26 +50,26 @@ function full(sb) {
   });
 }
 
-test('compact: возвращает окна, ожидание, правила дня, обещания — в формате SessionStart', () => {
+test('compact: returns windows, waiting, day rules, promises — in SessionStart format', () => {
   const sb = sandbox(); full(sb);
   const r = runHook('session-start.mjs', input('compact'), sb.env);
   assert.equal(r.code, 0);
   assert.equal(r.json.hookSpecificOutput.hookEventName, 'SessionStart');
   const c = ctx(r);
   for (const s of ['alpha', 'Gamma', 'владелец: «да» на витрину проекта', 'PR 454', 'Всегда проверять ссылку', 'Прогнать персону', 'Haiku-персона'])
-    assert.ok(c.includes(s), 'нет: ' + s);
-  assert.ok(!c.includes('ВЧЕРАШНЕЕ-ПРАВИЛО'), 'вчерашнее памятное правило не показываем');
-  assert.ok(!c.includes('СТАРОЕ-НЕ-ДОЛЖНО-ПОПАСТЬ'), 'берём только свежий HANDOFF');
-  assert.ok(!c.includes('~$42'), 'раздел «Деньги» не нужен');
+    assert.ok(c.includes(s), 'missing: ' + s);
+  assert.ok(!c.includes('ВЧЕРАШНЕЕ-ПРАВИЛО'), 'yesterday\'s remembered rule must not be shown');
+  assert.ok(!c.includes('СТАРОЕ-НЕ-ДОЛЖНО-ПОПАСТЬ'), 'only the fresh HANDOFF is used');
+  assert.ok(!c.includes('~$42'), 'the "Money" section is not needed');
 });
 
-test('resume даёт то же', () => {
+test('resume gives the same', () => {
   const sb = sandbox(); full(sb);
   const r = runHook('session-start.mjs', input('resume'), sb.env);
   assert.ok(ctx(r).includes('alpha'));
 });
 
-test('startup, clear, fork — тишина', () => {
+test('startup, clear, fork — silence', () => {
   const sb = sandbox(); full(sb);
   for (const s of ['startup', 'clear', 'fork']) {
     const r = runHook('session-start.mjs', input(s), sb.env);
@@ -78,7 +78,7 @@ test('startup, clear, fork — тишина', () => {
   }
 });
 
-test('≤ 40 строк и < 9000 знаков, даже если файлы огромные', () => {
+test('≤ 40 lines and < 9000 chars, even if the files are huge', () => {
   const sb = sandbox();
   const big = (n) => Array.from({ length: n }, (_, i) => `- строка ${i} ` + 'ж'.repeat(400)).join('\n');
   sb.write('STATUS.md', '# Как дела\n\n| Проект | Окно |\n|---|---|\n' + Array.from({ length: 200 }, (_, i) => `| П${i} | w${i} |`).join('\n') + '\n\n## Вопрос\n' + big(300));
@@ -88,12 +88,12 @@ test('≤ 40 строк и < 9000 знаков, даже если файлы о�
   sb.setState({ version: 1, windows: {}, waiting: [], promises: Array.from({ length: 50 }, (_, i) => ({ id: 'p' + i, text: 'обещание ' + i, ts: '2026-11-14T07:00:00+07:00' })), rules });
   const r = runHook('session-start.mjs', input('compact'), sb.env);
   const c = ctx(r);
-  assert.ok(c.split('\n').length <= 40, 'строк: ' + c.split('\n').length);
-  assert.ok(c.length < 9000, 'знаков: ' + c.length);
+  assert.ok(c.split('\n').length <= 40, 'lines: ' + c.split('\n').length);
+  assert.ok(c.length < 9000, 'chars: ' + c.length);
   assert.ok(c.split('\n').every((l) => l.length <= 240));
 });
 
-test('нет ни файлов, ни состояния — короткая честная строка, код 0', () => {
+test('no files and no state — a short honest line, exit code 0', () => {
   const sb = sandbox();
   const r = runHook('session-start.mjs', input('compact'), sb.env);
   assert.equal(r.code, 0);
@@ -101,14 +101,14 @@ test('нет ни файлов, ни состояния — короткая ч�
   assert.ok(ctx(r).split('\n').length <= 5);
 });
 
-test('устаревший STATUS (> 24 ч) помечен как старый', () => {
+test('stale STATUS (> 24 h) is marked as old', () => {
   const sb = sandbox();
   sb.write('STATUS.md', STATUS, new Date('2026-11-12T10:00:00+07:00'));
   const r = runHook('session-start.mjs', input('compact'), sb.env);
   assert.match(ctx(r), /устарел|старше суток/i);
 });
 
-test('секреты из файлов и состояния не попадают в контекст', () => {
+test('secrets from files and state do not reach the context', () => {
   const sb = sandbox();
   sb.write('STATUS.md', STATUS + '\n## Вопрос\n- ключ ' + FK.sk + ' и password: hunter2\n');
   sb.setState({ version: 1, windows: {}, waiting: [{ id: 'w', text: `токен ${FK.ghp2}`, ts: '2026-11-14T08:00:00+07:00' }], promises: [], rules: [] });
@@ -116,16 +116,16 @@ test('секреты из файлов и состояния не попадаю
   assert.ok(!new RegExp([FK.sk, 'hunter2', FK.ghp2.slice(0, 20)].join('|')).test(c));
 });
 
-test('кривой вход: пусто, null, массив, не-JSON, число — код 0, без падения, тишина', () => {
+test('malformed input: empty, null, array, non-JSON, number — exit code 0, no crash, silence', () => {
   const sb = sandbox(); full(sb);
   for (const bad of ['', 'null', '[]', 'не json', '42', '"строка"', '{"source":null}', '{"source":{}}']) {
     const r = runHook('session-start.mjs', bad, sb.env);
     assert.equal(r.code, 0, JSON.stringify(bad));
-    assert.equal(r.stdout.trim(), '', 'на мусорном входе молчим: ' + JSON.stringify(bad));
+    assert.equal(r.stdout.trim(), '', 'silent on garbage input: ' + JSON.stringify(bad));
   }
 });
 
-test('битый state.json: код 0, работаем дальше', () => {
+test('broken state.json: exit code 0, carry on', () => {
   const sb = sandbox();
   sb.write('STATUS.md', STATUS);
   sb.write('home/state.json', '{не json');
@@ -134,15 +134,15 @@ test('битый state.json: код 0, работаем дальше', () => {
   assert.ok(ctx(r).includes('alpha'));
 });
 
-test('источники — каталог вместо файла, пустые файлы: без падения', () => {
+test('sources — a directory instead of a file, empty files: no crash', () => {
   const sb = sandbox();
-  sb.write('STATUS.md/inner.txt', 'x'); // STATUS.md — каталог
+  sb.write('STATUS.md/inner.txt', 'x'); // STATUS.md is a directory
   sb.write('MEMORY.md', '');
   const r = runHook('session-start.mjs', input('compact'), sb.env);
   assert.equal(r.code, 0);
 });
 
-test('сбой внутри хука → запись в журнал и код 0', () => {
+test('failure inside the hook → journal entry and exit code 0', () => {
   const sb = sandbox(); full(sb);
   const r = runHook('session-start.mjs', input('compact'), { ...sb.env, LEO_TEST_CRASH: '1' });
   assert.equal(r.code, 0);
@@ -150,7 +150,7 @@ test('сбой внутри хука → запись в журнал и код 
   assert.match(sb.log(), /session-start/);
 });
 
-test('LEO_OFF=1 — тишина', () => {
+test('LEO_OFF=1 — silence', () => {
   const sb = sandbox(); full(sb);
   const r = runHook('session-start.mjs', input('compact'), { ...sb.env, LEO_OFF: '1' });
   assert.equal(r.stdout.trim(), '');

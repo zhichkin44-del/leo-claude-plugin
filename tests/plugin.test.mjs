@@ -8,14 +8,14 @@ import { redact } from '../lib/secrets.mjs';
 
 const j = (p) => JSON.parse(readFileSync(join(ROOT, p), 'utf8'));
 
-test('plugin.json: имя leo, kebab-case, нет лишнего', () => {
+test('plugin.json: name leo, kebab-case, nothing extra', () => {
   const p = j('.claude-plugin/plugin.json');
   assert.equal(p.name, 'leo');
   assert.match(p.version, /^\d+\.\d+\.\d+$/);
   assert.ok(p.description);
 });
 
-test('marketplace.json: name, owner, plugins[leo] с относительным source', () => {
+test('marketplace.json: name, owner, plugins[leo] with a relative source', () => {
   const m = j('.claude-plugin/marketplace.json');
   assert.ok(m.name && m.owner?.name);
   const e = m.plugins.find((x) => x.name === 'leo');
@@ -23,7 +23,7 @@ test('marketplace.json: name, owner, plugins[leo] с относительным 
   assert.ok(e.source === './' || e.source === '.' || e.source.startsWith('./'));
 });
 
-test('hooks.json: события SessionStart/PreCompact/PostCompact/Stop (нет хука на каждое сообщение), exec-форма node + CLAUDE_PLUGIN_ROOT, нужные matcher и таймауты', () => {
+test('hooks.json: events SessionStart/PreCompact/PostCompact/Stop (no hook on every message), exec form node + CLAUDE_PLUGIN_ROOT, required matchers and timeouts', () => {
   const h = j('hooks/hooks.json').hooks;
   assert.deepEqual(Object.keys(h).sort(), ['PostCompact', 'PreCompact', 'SessionStart', 'Stop']);
   assert.equal(h.SessionStart[0].matcher, 'compact|resume');
@@ -35,15 +35,15 @@ test('hooks.json: события SessionStart/PreCompact/PostCompact/Stop (не�
     assert.ok(existsSync(join(ROOT, 'hooks', file)));
     assert.ok(hk.timeout > 0);
   }
-  assert.ok(h.Stop[0].hooks[0].timeout >= 50, 'Stop ждёт Haiku');
+  assert.ok(h.Stop[0].hooks[0].timeout >= 50, 'Stop waits for Haiku');
 });
 
-test('claude plugin validate проходит (если claude есть)', { skip: spawnSync('claude', ['--version'], { shell: process.platform === 'win32' }).status !== 0 }, () => {
+test('claude plugin validate passes (if claude is installed)', { skip: spawnSync('claude', ['--version'], { shell: process.platform === 'win32' }).status !== 0 }, () => {
   const r = spawnSync('claude', ['plugin', 'validate', ROOT], { encoding: 'utf8', shell: process.platform === 'win32' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
-test('фильтр секретов', () => {
+test('secret filter', () => {
   for (const s of [FK.sk, FK.ghp, FK.pat, FK.xox, FK.akia, 'Bearer abcdefghijklmnop12345', FK.jwt])
     assert.ok(!redact('ключ ' + s + ' конец').includes(s), s);
   assert.ok(!redact('password: hunter2 и пароль = qwerty').match(/hunter2|qwerty/));
@@ -51,7 +51,7 @@ test('фильтр секретов', () => {
   assert.equal(redact('обычный текст про PR 12'), 'обычный текст про PR 12');
 });
 
-test('CLI: окна, ожидание, обещания, правила, show', () => {
+test('CLI: windows, waiting, promises, rules, show', () => {
   const sb = sandbox();
   const run = (...a) => runCli(a, sb.env);
   assert.equal(run('window', 'set', 'alpha', 'working', 'кейс ×3').code, 0);
@@ -75,7 +75,7 @@ test('CLI: окна, ожидание, обещания, правила, show', 
   assert.equal(Object.keys(sb.state().windows).length, 0);
 });
 
-test('CLI: ошибки аргументов — понятное сообщение, код 1, без падения', () => {
+test('CLI: bad arguments — clear message, exit code 1, no crash', () => {
   const sb = sandbox();
   const r = runCli(['window', 'set'], sb.env);
   assert.equal(r.code, 1);

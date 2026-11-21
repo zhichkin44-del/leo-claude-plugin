@@ -15,7 +15,7 @@ function fake(sb, ...parts) {
 }
 const bare = (sb) => ({ LEO_HOME: sb.env.LEO_HOME, PATH: '', USERPROFILE: join(sb.dir, 'up'), APPDATA: join(sb.dir, 'ap'), LOCALAPPDATA: join(sb.dir, 'la'), HOME: join(sb.dir, 'hm') });
 
-test('claude на Windows: порядок LEO_CLAUDE → config → PATH → стандартные места', () => {
+test('claude on Windows: order LEO_CLAUDE → config → PATH → standard locations', () => {
   const sb = sandbox();
   const std = fake(sb, 'up', '.local', 'bin', 'claude.exe');
   const cfg = fake(sb, 'custom', 'claude.exe');
@@ -37,7 +37,7 @@ test('claude на Windows: порядок LEO_CLAUDE → config → PATH → с�
   assert.equal(findClaude(env, { platform: 'win32', configured: join(sb.dir, 'нет', 'claude.exe') }).source, 'PATH');
 });
 
-test('claude на Windows: npm-шим claude.cmd запускается через shell, а настоящий claude.exe рядом — напрямую', () => {
+test('claude on Windows: npm shim claude.cmd runs through the shell, the real claude.exe next to it runs directly', () => {
   const sb = sandbox();
   const cmd = fake(sb, 'ap', 'npm', 'claude.cmd');
   const r = findClaude(bare(sb), { platform: 'win32', configured: '' });
@@ -51,13 +51,13 @@ test('claude на Windows: npm-шим claude.cmd запускается чере
   assert.equal(r2.shell, undefined);
 });
 
-test('claude на Windows: стандартное место %LOCALAPPDATA%\\Programs\\claude\\claude.exe', () => {
+test('claude on Windows: standard location %LOCALAPPDATA%\\Programs\\claude\\claude.exe', () => {
   const sb = sandbox();
   const p = fake(sb, 'la', 'Programs', 'claude', 'claude.exe');
   assert.equal(findClaude(bare(sb), { platform: 'win32', configured: '' }).cmd, p);
 });
 
-test('claude на macOS/Linux: ~/.local/bin/claude, ~/.npm-global/bin/claude и PATH', () => {
+test('claude on macOS/Linux: ~/.local/bin/claude, ~/.npm-global/bin/claude and PATH', () => {
   const sb = sandbox();
   const local = fake(sb, 'hm', '.local', 'bin', 'claude');
   assert.equal(findClaude(bare(sb), { platform: 'linux', configured: '' }).cmd, local);
@@ -70,7 +70,7 @@ test('claude на macOS/Linux: ~/.local/bin/claude, ~/.npm-global/bin/claude и 
   assert.equal(findClaude({ ...bare(g), PATH: pathDir }, { platform: 'linux', configured: '' }).cmd, inPath);
 });
 
-test('стандартные места перечислены полностью (Windows и POSIX)', () => {
+test('standard locations are listed in full (Windows and POSIX)', () => {
   const env = { USERPROFILE: 'U', APPDATA: 'A', LOCALAPPDATA: 'L', HOME: 'H' };
   const w = standardLocations(env, 'win32');
   assert.equal(w.length, 3);
@@ -84,7 +84,7 @@ test('стандартные места перечислены полность�
   assert.match(p[3], /\.npm-global[\\/]bin[\\/]claude$/);
 });
 
-test('claude нигде нет → found: false, и один раз на сессию', () => {
+test('claude nowhere → found: false, reported once per session', () => {
   const sb = sandbox();
   const r = findClaude(bare(sb), { platform: 'win32', configured: '' });
   assert.equal(r.found, false);
@@ -94,13 +94,13 @@ test('claude нигде нет → found: false, и один раз на сес�
   assert.equal(noteClaudeMissingOnce(sb.env, 'sess-B'), true);
 });
 
-test('claudePath: тип проверяется, пустая строка — по умолчанию', () => {
+test('claudePath: type is checked, empty string — default', () => {
   assert.deepEqual(validateConfig({ claudePath: 'C:\\x\\claude.exe' }), []);
   assert.deepEqual(validateConfig({ claudePath: '' }), []);
   assert.equal(validateConfig({ claudePath: 5 }).length, 1);
 });
 
-test('хук без claude пишет одну строку claude-missing на сессию, а не 7 ошибок haiku-failed', () => {
+test('hook without claude writes one claude-missing line per session, not 7 haiku-failed errors', () => {
   const sb = sandbox();
   const e = { ...bare(sb), LEO_CLAUDE: '', LEO_HOME: sb.env.LEO_HOME, LEO_FAKE_LOG: sb.env.LEO_FAKE_LOG };
   const input = (session) => ({ session_id: session, stop_hook_active: false, last_assistant_message: longReply() });

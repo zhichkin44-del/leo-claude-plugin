@@ -31,7 +31,7 @@ All notable changes to Leo. Format: [Keep a Changelog](https://keepachangelog.co
 - `leo status`, `leo log [n]` (verdicts, blocks, cost, average time).
 - Slash commands `/leo:show`, `/leo:status`, `/leo:doctor`, `/leo:off`, `/leo:on` (skills).
 - `config.json` settings with a JSON schema: `mode` (block or advice), `minLength`, `triggers`, `model`, `maxCostPerDay`, `roles`, `ruleTtlDays`, `log`, `lang`, `profile`.
-- README.md in English (main) and README.ru.md, including "What leaves your machine".
+- README.md in English, including "What leaves your machine".
 
 ### Changed
 - The Haiku prompt and block messages no longer contain the author's private vocabulary (director / owner / "not a programmer"); that vocabulary lives in the optional `profile: "director"` (Russian). Roles are now called reader and skeptic; the parser still accepts the old `owner` key.

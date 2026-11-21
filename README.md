@@ -2,7 +2,9 @@
 
 **Leo keeps Claude Code on track: it restores your sessions, promises and rules after context compaction, and has a Haiku skeptic fact-check the final answer before you see it.**
 
-[Русский](README.ru.md) · MIT · Node.js 18+ · Windows, macOS, Linux · zero dependencies
+MIT · Node.js 18+ · Windows, macOS, Linux · zero dependencies
+
+![What Leo restores after context compaction (demo records)](docs/screenshots/leo-show.png)
 
 ## Install
 

@@ -5,7 +5,7 @@ import { recentUserMessages } from '../lib/transcript.mjs';
 
 const user = (content, extra = {}) => JSON.stringify({ type: 'user', isSidechain: false, message: { role: 'user', content }, ...extra });
 
-test('берёт последние настоящие сообщения владельца: строка и массив text-блоков, в порядке времени', () => {
+test('takes the last real owner messages: string and text-block array, in time order', () => {
   const sb = sandbox();
   const p = sb.write('t.jsonl', [
     user('первое'),
@@ -16,7 +16,7 @@ test('берёт последние настоящие сообщения вла
   assert.deepEqual(recentUserMessages(p, 2), ['второе и ещё', 'третье']);
 });
 
-test('пропускает tool_result, служебные теги, сообщения подагентов, не-user строки и мусор', () => {
+test('skips tool_result, service tags, subagent messages, non-user lines and garbage', () => {
   const sb = sandbox();
   const p = sb.write('t.jsonl', [
     user('НАСТОЯЩЕЕ'),
@@ -31,12 +31,12 @@ test('пропускает tool_result, служебные теги, сообщ�
   assert.deepEqual(recentUserMessages(p, 3), ['НАСТОЯЩЕЕ']);
 });
 
-test('нет файла, пустой путь, каталог, не строка — пустой список без падения', () => {
+test('no file, empty path, directory, non-string — empty list, no crash', () => {
   const sb = sandbox();
   for (const p of ['C:/нет/файла.jsonl', '', undefined, null, 5, sb.dir]) assert.deepEqual(recentUserMessages(p, 3), []);
 });
 
-test('обрезает длинные сообщения, прячет секреты, читает только хвост большого файла', () => {
+test('truncates long messages, hides secrets, reads only the tail of a large file', () => {
   const sb = sandbox();
   const big = JSON.stringify({ type: 'api-request-blob', blob: 'x'.repeat(4_000_000) });
   const p = sb.write('t.jsonl', [user('СТАРОЕ'), big, user('Проверь ' + 'я'.repeat(2000) + ' password: hunter2'), user('ключ ' + FK.sk)].join('\n'));
